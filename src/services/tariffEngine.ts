@@ -126,12 +126,41 @@ export function getDistricts(city: string): string[] {
 }
 
 /**
+ * İlçe bazlı resmi su fiyatı indirim oranını döner (ASKİ ve İZSU çevre yerleşim/ilçe tarifeleri)
+ */
+export function getDistrictWaterMultiplier(city: string, district: string): number {
+  if (city === 'Ankara') {
+    const outerDistricts = [
+      'Akyurt', 'Ayaş', 'Bala', 'Beypazarı', 'Çamlıdere', 'Çubuk', 'Elmadağ',
+      'Evren', 'Güdül', 'Haymana', 'Kalecik', 'Kahramankazan', 'Kızılcahamam',
+      'Polatlı', 'Şereflikoçhisar',
+    ];
+    if (outerDistricts.includes(district)) {
+      return 0.60; // ASKİ çevre yerleşim/ilçe %40 resmi indirimli tarife
+    }
+  }
+
+  if (city === 'İzmir') {
+    const outerDistricts = [
+      'Aliağa', 'Bayındır', 'Bergama', 'Beydağ', 'Çeşme', 'Dikili', 'Foça',
+      'Karaburun', 'Kemalpaşa', 'Kınık', 'Kiraz', 'Menderes', 'Menemen',
+      'Ödemiş', 'Seferihisar', 'Selçuk', 'Tire', 'Torbalı', 'Urla',
+    ];
+    if (outerDistricts.includes(district)) {
+      return 0.60; // İZSU çevre yerleşimler %40 resmi indirimli tarife
+    }
+  }
+
+  return 1.0; // İstanbul ve diğer merkez ilçeler için standart tarife (%100)
+}
+
+/**
  * Kademeli su tarifesine göre toplam maliyet hesapla (vergi dahil)
  */
 export function calculateWaterCost(
   city: string,
   consumption: number,
-  regionStatus?: 'center' | 'town' | 'rural'
+  district?: string
 ): number {
   const config = getCityConfig(city);
   if (!config) return 0;
@@ -140,9 +169,8 @@ export function calculateWaterCost(
   let cost = 0;
   let prevLimit = 0;
 
-  let discountFactor = 1.0;
-  if (regionStatus === 'town') discountFactor = 0.50;
-  else if (regionStatus === 'rural') discountFactor = 0.25;
+  // İlçe bazlı resmi katsayı çarpanı
+  const discountFactor = district ? getDistrictWaterMultiplier(city, district) : 1.0;
 
   for (const tier of config.waterTiers) {
     if (remaining <= 0) break;
@@ -194,11 +222,11 @@ export function calculateFromIndex(
   type: 'water' | 'gas',
   prevIndex: number,
   currentIndex: number,
-  regionStatus?: 'center' | 'town' | 'rural'
+  district?: string
 ): { consumption: number; cost: number } {
   const consumption = Math.max(0, currentIndex - prevIndex);
   const cost = type === 'water'
-    ? calculateWaterCost(city, consumption, regionStatus)
+    ? calculateWaterCost(city, consumption, district)
     : calculateGasCost(city, consumption);
   return { consumption, cost };
 }

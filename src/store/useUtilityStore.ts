@@ -8,7 +8,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { encryptData, decryptData } from '../utils/security';
-import { getCityConfig } from '../services/tariffEngine';
+import { getCityConfig, getDistrictWaterMultiplier } from '../services/tariffEngine';
 
 // ── Tipler ────────────────────────────────────────────────────────────────────
 
@@ -36,7 +36,6 @@ export interface Property {
   type:          'home' | 'office' | 'rental' | 'other';
   isPrepaid?:    boolean;   // kartlı sayaç modu
   prepaidCredit?: number;  // yüklenen kredi (TL)
-  regionStatus?: 'center' | 'town' | 'rural'; // bölge statüsü (merkez, belde, kırsal)
 }
 
 export interface UserProfile {
@@ -153,14 +152,12 @@ export function getBillBreakdown(
   type:        UtilityType,
   consumption: number,
   city:        string,
-  regionStatus?: 'center' | 'town' | 'rural',
+  district?:   string,
 ): BillBreakdown {
   const config = getCityConfig(city);
   const { kdv, ctv, abonelikUcreti } = config.taxes;
 
-  let discountFactor = 1.0;
-  if (regionStatus === 'town') discountFactor = 0.50;
-  else if (regionStatus === 'rural') discountFactor = 0.25;
+  const discountFactor = district ? getDistrictWaterMultiplier(city, district) : 1.0;
 
   if (type === 'water') {
     let remaining = consumption;
@@ -206,7 +203,7 @@ export function getBillBreakdown(
     rawTariff = r2(rawTariff);
     const ctvCost = r2(rawTariff * ctv);
     const kdvCost = r2(rawTariff * kdv);
-    const totalCost = r2(rawTariff * (1 + kdv + ctv) + abonelikUcreti); // Gas fixed charge usually does not have regional town discounts
+    const totalCost = r2(rawTariff * (1 + kdv + ctv) + abonelikUcreti); // Gas fixed charge does not have regional discounts
     const energyKwh = r2(consumption * 10.64);
 
     return {
@@ -259,7 +256,7 @@ export const useUtilityStore = create<UtilityState>()(
 
       completeSetup: (city, district, name, address) => {
         const id   = `prop_${Date.now()}`;
-        const prop: Property = { id, name: 'Ana Mülk', city, district, address, type: 'home', regionStatus: 'center' };
+        const prop: Property = { id, name: 'Ana Mülk', city, district, address, type: 'home' };
         set(s => ({
           profile:          { ...s.profile, city, district, name: name ?? s.profile.name, setupComplete: true },
           properties:       [prop],
