@@ -1,0 +1,413 @@
+import React, { useMemo, useRef } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  StatusBar, Animated, Dimensions,
+} from 'react-native';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { useRouter } from 'expo-router';
+import { C, FONT, RADIUS, SHADOW } from '../src/theme';
+import { useUtilityStore } from '../src/store/useUtilityStore';
+import { useSubscriptionStore } from '../src/store/useSubscriptionStore';
+import { analyzeConsumption } from '../src/services/leakDetectionService';
+import { calculateBenchmark } from '../src/services/socialBenchmark';
+
+const { width: SW } = Dimensions.get('window');
+const GAUGE_SIZE = (SW - 64) / 2;
+const GAUGE_R    = GAUGE_SIZE / 2 - 14;
+const CIRC       = 2 * Math.PI * GAUGE_R;
+
+// ── Dairesel Halka Göstergesi ─────────────────────────────────────────────────
+
+interface RingProps {
+  ratio:    number;   // 0–1 (bütçeye oranı)
+  color:    string;
+  dimColor: string;
+  label:    string;
+  amount:   string;
+  emoji:    string;
+  unit:     string;
+}
+
+function RingGauge({ ratio, color, dimColor, label, amount, emoji, unit }: RingProps) {
+  const clamp = Math.max(0, Math.min(1, ratio));
+  const fill  = CIRC * (1 - clamp);
+  const cx    = GAUGE_SIZE / 2;
+  const cy    = GAUGE_SIZE / 2;
+
+  return (
+    <View style={[rg.wrap, { width: GAUGE_SIZE, height: GAUGE_SIZE }]}>
+      <Svg width={GAUGE_SIZE} height={GAUGE_SIZE} style={rg.svg}>
+        <Defs>
+          <LinearGradient id={`g_${label}`} x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0%" stopColor={color} stopOpacity="0.5" />
+            <Stop offset="100%" stopColor={color} stopOpacity="1" />
+          </LinearGradient>
+        </Defs>
+        {/* Track */}
+        <Circle cx={cx} cy={cy} r={GAUGE_R}
+          stroke={dimColor} strokeWidth={10} fill="none" />
+        {/* Fill */}
+        <Circle cx={cx} cy={cy} r={GAUGE_R}
+          stroke={`url(#g_${label})`} strokeWidth={10} fill="none"
+          strokeDasharray={`${CIRC} ${CIRC}`}
+          strokeDashoffset={fill}
+          strokeLinecap="round"
+          rotation="-90" origin={`${cx},${cy}`} />
+      </Svg>
+      <View style={rg.center}>
+        <Text style={rg.emoji}>{emoji}</Text>
+        <Text style={[rg.label, { color }]}>{label}</Text>
+        <Text style={rg.amount}>{amount}</Text>
+        <Text style={rg.unit}>{unit}</Text>
+      </View>
+    </View>
+  );
+}
+
+const rg = StyleSheet.create({
+  wrap:   { position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  svg:    { position: 'absolute' },
+  center: { alignItems: 'center', gap: 1 },
+  emoji:  { fontSize: 20 },
+  label:  { fontSize: FONT.xs, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.8 },
+  amount: { fontSize: FONT.xl, fontWeight: '900', color: C.text },
+  unit:   { fontSize: FONT.xs, color: C.textDim },
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MONTHLY_BUDGET = 2000; // TL — ileride kullanıcı tanımlı olacak
+
+export default function Dashboard() {
+  const router  = useRouter();
+  const store   = useUtilityStore();
+  const subStore = useSubscriptionStore();
+
+  const { profile, properties, activePropertyId } = store;
+  const plan   = subStore.currentPlan();
+  const isPro  = subStore.tier !== 'free';
+
+  const activeProp = properties.find(p => p.id === activePropertyId);
+  const city       = activeProp?.city ?? profile.city ?? 'İstanbul';
+
+  // Aktif mülke ait kayıtlar
+  const activeLogs = useMemo(
+    () => activePropertyId
+      ? store.logs.filter(l => l.propertyId === activePropertyId)
+      : store.logs,
+    [store.logs, activePropertyId],
+  );
+
+  // Bu ayki su / gaz istatistikleri
+  const stats = useMemo(() => {
+    const now = new Date();
+    const cm  = now.getMonth();
+    const cy  = now.getFullYear();
+
+    const month = activeLogs.filter(l => {
+      const d = new Date(l.date);
+      return d.getMonth() === cm && d.getFullYear() === cy;
+    });
+
+    const waterLogs = month.filter(l => l.type === 'water');
+    const gasLogs   = month.filter(l => l.type === 'gas');
+
+    const waterCost = waterLogs.reduce((s, l) => s + l.cost, 0);
+    const gasCost   = gasLogs.reduce((s, l) => s + l.cost, 0);
+    const total     = waterCost + gasCost;
+
+    const waterM3   = waterLogs.reduce((s, l) => s + l.consumption, 0);
+    const gasM3     = gasLogs.reduce((s, l) => s + l.consumption, 0);
+
+    const dom  = now.getDate();
+    const dim  = new Date(cy, cm + 1, 0).getDate();
+    const proj = dom > 0 ? (total / dom) * dim : 0;
+
+    return { waterCost, gasCost, total, waterM3, gasM3, proj, count: month.length };
+  }, [activeLogs]);
+
+  // Anomali analizi
+  const anomaly   = useMemo(() => analyzeConsumption(activeLogs), [activeLogs]);
+  const benchmark = useMemo(() => calculateBenchmark(city, activeLogs), [city, activeLogs]);
+
+  // Kritik uyarı pulse animasyonu
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  React.useEffect(() => {
+    if (anomaly.level === 'critical') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.04, duration: 550, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1,    duration: 550, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [anomaly.level]);
+
+  const totalRatio = MONTHLY_BUDGET > 0 ? stats.total / MONTHLY_BUDGET : 0;
+  const barColor   = totalRatio > 1 ? C.danger : totalRatio > 0.8 ? C.warn : C.brand;
+
+  const canScanWater = subStore.canScan('water');
+  const canScanGas   = subStore.canScan('gas');
+
+  return (
+    <View style={s.root}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* ── Başlık ─────────────────────────────────── */}
+        <View style={s.header}>
+          <View>
+            <Text style={s.greeting}>
+              {profile.name ? `Merhaba, ${profile.name} 👋` : 'Verim'}
+            </Text>
+            <Text style={s.sub}>
+              {city}{activeProp?.district ? ` · ${activeProp.district}` : ''}
+              {activeProp ? ` · ${activeProp.name}` : ''}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[s.planBadge, subStore.tier !== 'free' && { borderColor: C.pro }]}
+            onPress={() => router.push('/paywall')}
+          >
+            <Text style={[s.planBadgeText, subStore.tier !== 'free' && { color: C.pro }]}>
+              {subStore.tier === 'free' ? '⭐ Pro\'ya Geç' : `⭐ ${subStore.tier === 'pro' ? 'Pro' : 'Landlord'}`}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Bütçe Kartı ────────────────────────────── */}
+        <View style={s.budgetCard}>
+          <Text style={s.budgetLabel}>Haziran Bütçe Tahmini</Text>
+          <Text style={s.budgetAmount}>₺{stats.proj.toFixed(0)}</Text>
+          <View style={s.barTrack}>
+            <Animated.View
+              style={[s.barFill, {
+                width:           `${Math.min(100, totalRatio * 100)}%` as any,
+                backgroundColor: barColor,
+              }]}
+            />
+          </View>
+          <View style={s.budgetMeta}>
+            <Text style={s.budgetMetaText}>Bu ay: ₺{stats.total.toFixed(2)}</Text>
+            <Text style={s.budgetMetaText}>Bütçe: ₺{MONTHLY_BUDGET}</Text>
+          </View>
+        </View>
+
+        {/* ── Dairesel Göstergeler ───────────────────── */}
+        <View style={s.gaugeRow}>
+          <RingGauge
+            ratio={MONTHLY_BUDGET > 0 ? stats.waterCost / (MONTHLY_BUDGET * 0.5) : 0}
+            color={C.water} dimColor={C.waterDim}
+            label="Su" emoji="💧"
+            amount={`₺${stats.waterCost.toFixed(0)}`}
+            unit={`${stats.waterM3.toFixed(1)} m³`}
+          />
+          <RingGauge
+            ratio={MONTHLY_BUDGET > 0 ? stats.gasCost / (MONTHLY_BUDGET * 0.5) : 0}
+            color={C.gas} dimColor={C.gasDim}
+            label="Gaz" emoji="🔥"
+            amount={`₺${stats.gasCost.toFixed(0)}`}
+            unit={`${stats.gasM3.toFixed(1)} m³`}
+          />
+        </View>
+
+        {/* ── Anomali / Kaçak Uyarısı ───────────────── */}
+        {anomaly.level !== 'none' && (
+          <Animated.View style={[
+            s.alertCard,
+            anomaly.level === 'critical'
+              ? { borderColor: C.danger, backgroundColor: C.dangerDim, transform: [{ scale: pulseAnim }] }
+              : { borderColor: C.warn,   backgroundColor: C.warnDim },
+          ]}>
+            <Text style={s.alertIcon}>{anomaly.level === 'critical' ? '🚨' : '⚠️'}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.alertTitle, { color: anomaly.level === 'critical' ? C.danger : C.warn }]}>
+                {anomaly.title}
+              </Text>
+              <Text style={s.alertBody}>{anomaly.description}</Text>
+              <Text style={s.alertRec}>{anomaly.recommendation}</Text>
+              {!plan.leakGuardEnabled && (
+                <TouchableOpacity onPress={() => router.push('/paywall')}>
+                  <Text style={s.alertUpgrade}>🔒 7/24 AI Kaçak Koruması için Pro →</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </Animated.View>
+        )}
+
+        {/* ── Free: Scan Limiti ──────────────────────── */}
+        {subStore.tier === 'free' && (
+          <View style={s.limitCard}>
+            <Text style={s.limitTitle}>Bu Ay Kalan Tarama</Text>
+            <View style={s.limitRow}>
+              <Text style={s.limitItem}>
+                💧 <Text style={{ color: C.water, fontWeight: '800' }}>
+                  {plan.maxScansPerMonth - subStore.monthlyScanCount('water')}
+                </Text> kaldı
+              </Text>
+              <Text style={s.limitSep}>·</Text>
+              <Text style={s.limitItem}>
+                🔥 <Text style={{ color: C.gas, fontWeight: '800' }}>
+                  {plan.maxScansPerMonth - subStore.monthlyScanCount('gas')}
+                </Text> kaldı
+              </Text>
+              <TouchableOpacity onPress={() => router.push('/paywall')} style={s.limitBtn}>
+                <Text style={s.limitBtnText}>Sınırsız →</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ── Native Reklam (Free) ───────────────────── */}
+        {plan.adsEnabled && (
+          <TouchableOpacity style={s.ad} onPress={() => router.push('/marketplace')} activeOpacity={0.85}>
+            <Text style={s.adEmoji}>🌿</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.adTitle}>Su Tasarrufu Ürünleri — EcoFlow TR</Text>
+              <Text style={s.adSub}>Tüketimini %40 düşür · Reklam</Text>
+            </View>
+            <Text style={[s.adArrow, { color: C.brand }]}>→</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* ── Sosyal Benchmark ──────────────────────── */}
+        {benchmark && (
+          <View style={s.benchCard}>
+            <Text style={s.benchBadge}>{benchmark.badge}</Text>
+            <Text style={s.benchMsg}>{benchmark.message}</Text>
+            <View style={s.benchRow}>
+              <Text style={s.benchStat}>Sen: ₺{benchmark.userMonthlyCost.toFixed(0)}</Text>
+              <Text style={s.benchDot}>·</Text>
+              <Text style={s.benchStat}>{city} ort: ₺{benchmark.cityAvgCost}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* ── Son Kayıtlar ──────────────────────────── */}
+        {activeLogs.length > 0 && (
+          <View style={s.recentCard}>
+            <Text style={s.sectionLabel}>Son Kayıtlar</Text>
+            {activeLogs.slice(0, 4).map(log => (
+              <View key={log.id} style={s.logRow}>
+                <Text style={s.logIcon}>{log.type === 'water' ? '💧' : '🔥'}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.logDate}>{new Date(log.date).toLocaleDateString('tr-TR')}</Text>
+                  <Text style={s.logSub}>
+                    Endeks: {log.indexValue} m³ · Tüketim: {log.consumption.toFixed(1)} m³
+                  </Text>
+                </View>
+                <Text style={[s.logCost, { color: log.type === 'water' ? C.water : C.gas }]}>
+                  ₺{log.cost.toFixed(2)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* ── Floating Action Buttons ───────────────── */}
+        <View style={s.fabRow}>
+          <TouchableOpacity
+            style={[s.fab, { backgroundColor: C.waterDim, borderColor: `${C.water}50` }, SHADOW.water]}
+            onPress={() => canScanWater ? router.push('/scan') : router.push('/paywall')}
+            activeOpacity={0.8}
+          >
+            <Text style={s.fabEmoji}>💧</Text>
+            <Text style={[s.fabLabel, { color: C.water }]}>Su Tara</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[s.fab, { backgroundColor: C.gasDim, borderColor: `${C.gas}50` }, SHADOW.gas]}
+            onPress={() => canScanGas ? router.push('/scan') : router.push('/paywall')}
+            activeOpacity={0.8}
+          >
+            <Text style={s.fabEmoji}>🔥</Text>
+            <Text style={[s.fabLabel, { color: C.gas }]}>Gaz Tara</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[s.fab, { backgroundColor: C.brandDim, borderColor: `${C.brand}50` }, SHADOW.brand]}
+            onPress={() => router.push('/marketplace')}
+            activeOpacity={0.8}
+          >
+            <Text style={s.fabEmoji}>🌿</Text>
+            <Text style={[s.fabLabel, { color: C.brand }]}>Market</Text>
+          </TouchableOpacity>
+        </View>
+
+      </ScrollView>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  root:           { flex: 1, backgroundColor: C.bg },
+  scroll:         { padding: 20, paddingBottom: 40 },
+
+  // Header
+  header:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingTop: 48 },
+  greeting:       { fontSize: FONT.xl, fontWeight: '800', color: C.text },
+  sub:            { fontSize: FONT.xs, color: C.textDim, marginTop: 3 },
+  planBadge:      { borderWidth: 1, borderColor: C.border, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 6 },
+  planBadgeText:  { color: C.textDim, fontSize: FONT.xs, fontWeight: '700' },
+
+  // Budget
+  budgetCard:     { backgroundColor: C.card, borderRadius: RADIUS.xl, padding: 24, marginBottom: 20, borderWidth: 1, borderColor: C.cardBorder },
+  budgetLabel:    { color: C.textDim, fontSize: FONT.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  budgetAmount:   { fontSize: 46, fontWeight: '900', color: C.text, marginTop: 4, letterSpacing: -1 },
+  barTrack:       { height: 4, backgroundColor: C.border, borderRadius: 2, marginTop: 14, marginBottom: 8, overflow: 'hidden' },
+  barFill:        { height: '100%', borderRadius: 2 },
+  budgetMeta:     { flexDirection: 'row', justifyContent: 'space-between' },
+  budgetMetaText: { fontSize: FONT.xs, color: C.textDim },
+
+  // Gauges
+  gaugeRow:       { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 },
+
+  // Alert
+  alertCard:      { flexDirection: 'row', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: RADIUS.lg, padding: 14, marginBottom: 16, gap: 10, alignItems: 'flex-start' },
+  alertIcon:      { fontSize: 24, marginTop: 1 },
+  alertTitle:     { fontWeight: '800', fontSize: FONT.md, marginBottom: 2 },
+  alertBody:      { color: C.textDim, fontSize: FONT.sm, lineHeight: 18 },
+  alertRec:       { color: C.textDim, fontSize: FONT.xs, marginTop: 4, fontStyle: 'italic' },
+  alertUpgrade:   { color: C.pro, fontSize: FONT.sm, fontWeight: '700', marginTop: 8 },
+
+  // Scan limit
+  limitCard:      { backgroundColor: C.card, borderRadius: RADIUS.md, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: C.border },
+  limitTitle:     { color: C.textDim, fontSize: FONT.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
+  limitRow:       { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  limitItem:      { color: C.text, fontSize: FONT.sm },
+  limitSep:       { color: C.textDim },
+  limitBtn:       { marginLeft: 'auto' as any, backgroundColor: C.proDim, borderRadius: RADIUS.sm, paddingHorizontal: 10, paddingVertical: 5 },
+  limitBtnText:   { color: C.pro, fontWeight: '800', fontSize: FONT.xs },
+
+  // Ad
+  ad:             { flexDirection: 'row', alignItems: 'center', backgroundColor: C.brandDim, borderWidth: 1, borderColor: `${C.brand}25`, borderRadius: RADIUS.md, padding: 12, marginBottom: 14, gap: 10 },
+  adEmoji:        { fontSize: 20 },
+  adTitle:        { color: C.text, fontSize: FONT.sm, fontWeight: '600' },
+  adSub:          { color: C.textDim, fontSize: FONT.xs },
+  adArrow:        { fontWeight: '800', fontSize: FONT.lg },
+
+  // Benchmark
+  benchCard:      { backgroundColor: C.successDim, borderRadius: RADIUS.lg, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: `${C.success}25` },
+  benchBadge:     { color: C.success, fontWeight: '800', fontSize: FONT.md, marginBottom: 4 },
+  benchMsg:       { color: C.text, fontSize: FONT.sm, lineHeight: 18 },
+  benchRow:       { flexDirection: 'row', marginTop: 6, gap: 6 },
+  benchDot:       { color: C.textDim, fontSize: FONT.sm },
+  benchStat:      { color: C.textDim, fontSize: FONT.sm },
+
+  // Recent
+  recentCard:     { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: C.cardBorder },
+  sectionLabel:   { color: C.textDim, fontSize: FONT.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 },
+  logRow:         { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.divider },
+  logIcon:        { fontSize: 18, marginRight: 10 },
+  logDate:        { color: C.text, fontSize: FONT.sm, fontWeight: '600' },
+  logSub:         { color: C.textDim, fontSize: FONT.xs, marginTop: 2 },
+  logCost:        { fontWeight: '900', fontSize: FONT.md },
+
+  // FABs
+  fabRow:         { flexDirection: 'row', gap: 10 },
+  fab:            { flex: 1, borderRadius: RADIUS.lg, paddingVertical: 18, alignItems: 'center', gap: 6, borderWidth: 1 },
+  fabEmoji:       { fontSize: 24 },
+  fabLabel:       { fontSize: FONT.sm, fontWeight: '800' },
+});

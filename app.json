@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Verim",
+    "slug": "verim",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "verim",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tevertechnology.verim",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Sayacınızı kamerayla okuyabilmek için kamera izni gereklidir."
+      }
+    },
+    "android": {
+      "package": "com.tevertechnology.verim",
+      "adaptiveIcon": {
+        "backgroundColor": "#070A13"
+      },
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
