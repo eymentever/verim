@@ -42,8 +42,8 @@ export function calculateBenchmark(
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
-  const userWater = thisMonth.filter((l) => l.type === 'water').reduce((s, l) => s + l.indexValue, 0);
-  const userGas   = thisMonth.filter((l) => l.type === 'gas').reduce((s, l) => s + l.indexValue, 0);
+  const userWater = thisMonth.filter((l) => l.type === 'water').reduce((s, l) => s + l.consumption, 0);
+  const userGas   = thisMonth.filter((l) => l.type === 'gas').reduce((s, l) => s + l.consumption, 0);
   const userCost  = thisMonth.reduce((s, l) => s + l.cost, 0);
 
   if (userCost === 0) return null;
