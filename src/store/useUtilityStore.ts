@@ -177,6 +177,7 @@ interface UtilityState {
   setProfile:          (p: Partial<UserProfile>) => void;
   completeSetup:       (city: string, district: string, name?: string, address?: string) => void;
   addProperty:         (p: Property) => void;
+  updateProperty:      (id: string, updates: Partial<Property>) => void;
   removeProperty:      (id: string) => void;
   setActiveProperty:   (id: string) => void;
   activeProperty:      () => Property | null;
@@ -214,6 +215,18 @@ export const useUtilityStore = create<UtilityState>()(
 
       addProperty: (p) =>
         set(s => ({ properties: [...s.properties, p] })),
+
+      updateProperty: (id, updates) =>
+        set(s => {
+          const properties = s.properties.map(p => p.id === id ? { ...p, ...updates } : p);
+          const activeProp = properties.find(p => p.id === s.activePropertyId);
+          return {
+            properties,
+            profile: activeProp
+              ? { ...s.profile, city: activeProp.city, district: activeProp.district }
+              : s.profile,
+          };
+        }),
 
       removeProperty: (id) =>
         set(s => ({

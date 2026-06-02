@@ -6,13 +6,6 @@ import { useUtilityStore } from '../src/store/useUtilityStore';
 import { getAllCities, getDistricts, getCityConfig } from '../src/services/tariffEngine';
 import { Sparkles, Check } from 'lucide-react-native';
 
-const CITIES = [
-  'İstanbul',
-  'Ankara',
-  'İzmir',
-  ...getAllCities().filter(c => c !== 'İstanbul' && c !== 'Ankara' && c !== 'İzmir')
-];
-
 export default function SetupScreen() {
   const router = useRouter();
   const { completeSetup } = useUtilityStore();
@@ -20,14 +13,9 @@ export default function SetupScreen() {
   const [step, setStep]                   = useState<1 | 2 | 3 | 4>(1);
   const [name, setName]                   = useState('');
   const [selectedCity, setSelectedCity]   = useState('');
-  const [citySearch, setCitySearch]       = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [districtSearch, setDistrictSearch]     = useState('');
   const [address, setAddress]             = useState('');
-
-  const filteredCities = CITIES.filter(c =>
-    c.toLowerCase().includes(citySearch.toLowerCase())
-  );
 
   const districts         = selectedCity ? getDistricts(selectedCity) : [];
   const filteredDistricts = districts.filter(d =>
@@ -89,25 +77,17 @@ export default function SetupScreen() {
           <View style={s.card}>
             <Text style={s.stepTitle}>Şehrin Hangisi?</Text>
             <Text style={s.stepDesc}>Doğru tarifeyi uygulayabilmemiz için şehrini seç.</Text>
-            <TextInput
-              style={s.input}
-              placeholder="Şehir ara..."
-              placeholderTextColor={C.textMuted}
-              value={citySearch}
-              onChangeText={setCitySearch}
-            />
-            <ScrollView style={s.cityList} nestedScrollEnabled>
-              {filteredCities.map(c => (
+            <View style={s.cityGrid}>
+              {['İstanbul', 'Ankara', 'İzmir'].map(c => (
                 <TouchableOpacity
                   key={c}
-                  style={s.cityRowBtn}
+                  style={[s.cityBtn, selectedCity === c && s.cityBtnActive]}
                   onPress={() => { setSelectedCity(c); setSelectedDistrict(''); setDistrictSearch(''); }}
                 >
-                  <Text style={[s.cityRowLabel, selectedCity === c && { color: C.water, fontWeight: '700' }]}>{c}</Text>
-                  {selectedCity === c && <Check size={16} color={C.water} strokeWidth={3} />}
+                  <Text style={[s.cityLabel, selectedCity === c && { color: C.water }]}>{c}</Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
             <TouchableOpacity
               style={[s.primaryBtn, !selectedCity && s.btnDisabled]}
               disabled={!selectedCity}

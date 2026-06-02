@@ -33,19 +33,18 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       'Üsküdar', 'Zeytinburnu',
     ],
     waterTiers: [
-      { limit: 10,  rate: 32.40 },   // 0-10 m³
-      { limit: 20,  rate: 49.50 },   // 11-20 m³
-      { limit: 30,  rate: 68.20 },   // 21-30 m³
+      { limit: 15,  rate: 44.50 },   // 0-15 m³
+      { limit: 30,  rate: 68.20 },   // 15-30 m³
       { limit: 999, rate: 89.80 },   // 30+ m³
     ],
-    gasRate: 9.327,   // IGDAŞ 2026 konut tarifesi (₺/m³)
+    gasRate: 13.45,   // İGDAŞ 2026 konut tarifesi (₺/m³)
     taxes: {
       kdv: 0.10,
       ctv: 0.02,
       abonelikUcreti: 24.50,
     },
     currency: 'TRY',
-    lastUpdated: '2026-01',
+    lastUpdated: '2026-06',
   },
 
   Ankara: {
@@ -57,19 +56,18 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       'Polatlı', 'Pursaklar', 'Sincan', 'Şereflikoçhisar', 'Yenimahalle',
     ],
     waterTiers: [
-      { limit: 10,  rate: 28.10 },
-      { limit: 20,  rate: 43.70 },
-      { limit: 30,  rate: 61.40 },
-      { limit: 999, rate: 82.00 },
+      { limit: 15,  rate: 58.40 },   // 0-15 m³
+      { limit: 30,  rate: 75.00 },   // 15-30 m³
+      { limit: 999, rate: 92.00 },   // 30+ m³
     ],
-    gasRate: 8.754,  // BAŞKENTGAZ 2026 konut tarifesi
+    gasRate: 12.80,  // BAŞKENTGAZ 2026 konut tarifesi (₺/m³)
     taxes: {
       kdv: 0.10,
       ctv: 0.02,
       abonelikUcreti: 20.00,
     },
     currency: 'TRY',
-    lastUpdated: '2026-01',
+    lastUpdated: '2026-06',
   },
 
   İzmir: {
@@ -82,19 +80,19 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       'Selçuk', 'Tire', 'Torbalı', 'Urla',
     ],
     waterTiers: [
-      { limit: 10,  rate: 29.80 },
-      { limit: 20,  rate: 45.20 },
-      { limit: 30,  rate: 63.90 },
-      { limit: 999, rate: 85.50 },
+      { limit: 6,   rate: 25.00 },   // 0-6 m³ (İndirimli ilk kademe)
+      { limit: 20,  rate: 60.00 },   // 6-20 m³
+      { limit: 40,  rate: 99.83 },   // 20-40 m³
+      { limit: 999, rate: 145.00 },  // 40+ m³
     ],
-    gasRate: 9.102,  // İZGAZ 2026 konut tarifesi
+    gasRate: 13.10,  // İZMİRGAZ 2026 konut tarifesi (₺/m³)
     taxes: {
       kdv: 0.10,
       ctv: 0.02,
       abonelikUcreti: 22.00,
     },
     currency: 'TRY',
-    lastUpdated: '2026-01',
+    lastUpdated: '2026-06',
   },
 };
 
@@ -115,25 +113,12 @@ export const DEFAULT_TARIFF: CityTariffConfig = {
   lastUpdated: '2026-01',
 };
 
-const ALL_TURKISH_CITIES = [
-  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya',
-  'Ardahan', 'Artvin', 'Aydın', 'Balıkesir', 'Bartın', 'Batman', 'Bayburt', 'Bilecik',
-  'Bingöl', 'Bitlis', 'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum',
-  'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir',
-  'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari', 'Hatay', 'Iğdır', 'Isparta', 'İstanbul',
-  'İzmir', 'Kahramanmaraş', 'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kırıkkale',
-  'Kırklareli', 'Kırşehir', 'Kilis', 'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa',
-  'Mardin', 'Mersin', 'Muğla', 'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye', 'Rize',
-  'Sakarya', 'Samsun', 'Siirt', 'Sinop', 'Sivas', 'Şanlıurfa', 'Şırnak', 'Tekirdağ',
-  'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van', 'Yalova', 'Yozgat', 'Zonguldak'
-].sort((a, b) => a.localeCompare(b, 'tr'));
-
 export function getCityConfig(city: string): CityTariffConfig {
   return CITY_TARIFFS[city] ?? { ...DEFAULT_TARIFF, city };
 }
 
 export function getAllCities(): string[] {
-  return ALL_TURKISH_CITIES;
+  return Object.keys(CITY_TARIFFS);
 }
 
 export function getDistricts(city: string): string[] {

@@ -442,6 +442,8 @@ const s = StyleSheet.create({
 
   // FABs
   fabRow:         { flexDirection: 'row', gap: 10 },
+  fab:            { flex: 1, borderRadius: RADIUS.md, overflow: 'hidden', borderWidth: 1 },
+  fabGrad:        { paddingVertical: 14, alignItems: 'center', justifyContent: 'center', gap: 6 },
   fabEmoji:       { fontSize: 24 },
   fabLabel:       { fontSize: FONT.sm, fontWeight: '800' },
 });
