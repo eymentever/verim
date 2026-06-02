@@ -282,9 +282,12 @@ export default function SettingsScreen() {
         <SectionTitle title="Veri & Gizlilik" />
         <View style={s.card}>
           <TouchableOpacity style={st.infoRow}
-            onPress={() => Alert.alert('Emin misin?', 'Tüm kayıtlar silinecek.', [
+            onPress={() => Alert.alert('⚠️ Emin misin?', 'Tüm sayaç kayıtları ve mülk bilgileri kalıcı olarak silinecek. Bu işlem geri alınamaz.', [
               { text: 'İptal', style: 'cancel' },
-              { text: 'Sil', style: 'destructive', onPress: () => {} },
+              { text: 'Evet, Sil', style: 'destructive', onPress: () => {
+                store.logs.forEach(l => store.removeLog(l.id));
+                Alert.alert('✓ Silindi', 'Tüm veriler temizlendi.');
+              }},
             ])}>
             <Text style={[st.infoLabel, { color: C.danger }]}>🗑️ Tüm Verileri Sil</Text>
           </TouchableOpacity>

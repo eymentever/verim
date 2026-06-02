@@ -77,6 +77,7 @@ const rg = StyleSheet.create({
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MONTHLY_BUDGET = 2000; // TL — ileride kullanıcı tanımlı olacak
+const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
 export default function Dashboard() {
   const router  = useRouter();
@@ -179,7 +180,7 @@ export default function Dashboard() {
 
         {/* ── Bütçe Kartı ────────────────────────────── */}
         <View style={s.budgetCard}>
-          <Text style={s.budgetLabel}>Haziran Bütçe Tahmini</Text>
+          <Text style={s.budgetLabel}>{TR_MONTHS[new Date().getMonth()]} Bütçe Tahmini</Text>
           <Text style={s.budgetAmount}>₺{stats.proj.toFixed(0)}</Text>
           <View style={s.barTrack}>
             <Animated.View

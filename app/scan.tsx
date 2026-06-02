@@ -223,7 +223,7 @@ export default function ScanScreen() {
       {/* ── Başlık ─────────────────────────────────── */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Text style={s.backText}>← Geri</Text>
+          <Text style={[s.backText, { color }]}>← Geri</Text>
         </TouchableOpacity>
         <Text style={s.title}>Sayaç Tara</Text>
         <TouchableOpacity onPress={() => setTorchOn(v => !v)} style={s.torchBtn}>
@@ -428,7 +428,7 @@ const s = StyleSheet.create({
   root:            { flex: 1, backgroundColor: C.bg },
   header:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
   backBtn:         { width: 56 },
-  backText:        { color: C.water, fontSize: FONT.md, fontWeight: '700' },
+  backText:        { fontSize: FONT.md, fontWeight: '700' },
   title:           { color: C.text, fontSize: FONT.lg, fontWeight: '800' },
   torchBtn:        { width: 56, alignItems: 'flex-end' },
   torchIcon:       { fontSize: 22, color: C.textDim },

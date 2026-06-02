@@ -134,9 +134,10 @@ export default function SetupScreen() {
         {selectedCity && step >= 2 && (
           <View style={s.tariffPreview}>
             <Text style={s.tariffTitle}>📋 {selectedCity} Tarifesi (2026)</Text>
-            <Text style={s.tariffRow}>💧 Su: Kademeli (0-10 m³'ten başlar)</Text>
-            <Text style={s.tariffRow}>🔥 Gaz: Sabit birim fiyat</Text>
-            <Text style={s.tariffRow}>🧾 KDV + CTV dahil hesaplanır</Text>
+            <Text style={s.tariffRow}>💧 Su Kademe 1: 0–15 m³ → 32,40 ₺/m³</Text>
+            <Text style={s.tariffRow}>💧 Su Kademe 2: 15+ m³ → 49,50 ₺/m³</Text>
+            <Text style={s.tariffRow}>🔥 Gaz: m³ × 10,64 kWh × 1,15 ₺/kWh</Text>
+            <Text style={s.tariffRow}>🧾 ÇTV (1,50 ₺/m³) + KDV %10 dahil</Text>
           </View>
         )}
       </ScrollView>
