@@ -178,7 +178,7 @@ export default function ScanScreen() {
         ? (computeConsumption(result.indexValue, lastIndex) ?? 0)
         : result.indexValue;
 
-      const bd = getBillBreakdown(meterType, netConsumption);
+      const bd = getBillBreakdown(meterType, netConsumption, city);
 
       setOcrResult(result);
       setBreakdown(bd);

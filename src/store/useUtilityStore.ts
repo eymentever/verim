@@ -8,6 +8,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { encryptData, decryptData } from '../utils/security';
+import { getCityConfig } from '../services/tariffEngine';
 
 // ── Tipler ────────────────────────────────────────────────────────────────────
 
@@ -150,19 +151,66 @@ export interface BillBreakdown {
 export function getBillBreakdown(
   type:        UtilityType,
   consumption: number,
+  city:        string,
 ): BillBreakdown {
+  const config = getCityConfig(city);
+  const { kdv, ctv, abonelikUcreti } = config.taxes;
+
   if (type === 'water') {
-    const tier1    = r2(Math.min(consumption, WATER.tier1Limit) * WATER.tier1Rate);
-    const tier2    = r2(Math.max(0, consumption - WATER.tier1Limit) * WATER.tier2Rate);
-    const rawTariff = r2(tier1 + tier2);
-    const ctv       = r2(consumption * WATER.ctv);
-    const kdv       = r2((rawTariff + ctv) * WATER.kdv);
-    return { consumption, rawTariff, ctv, kdv, totalCost: r2(rawTariff + ctv + kdv) };
+    let remaining = consumption;
+    let rawTariff = 0;
+    let prevLimit = 0;
+
+    for (const tier of config.waterTiers) {
+      if (remaining <= 0) break;
+      const tierVolume = Math.min(remaining, tier.limit - prevLimit);
+      rawTariff += tierVolume * tier.rate;
+      remaining -= tierVolume;
+      prevLimit = tier.limit;
+    }
+
+    rawTariff = r2(rawTariff);
+    const ctvCost = r2(rawTariff * ctv);
+    const kdvCost = r2(rawTariff * kdv);
+    const totalCost = r2(rawTariff * (1 + kdv + ctv) + abonelikUcreti);
+
+    return {
+      consumption,
+      rawTariff,
+      ctv: ctvCost,
+      kdv: kdvCost,
+      totalCost,
+    };
   } else {
-    const energyKwh = r2(consumption * GAS.calorificValue);
-    const rawTariff  = r2(energyKwh * GAS.ratePerKwh);
-    const kdv        = r2(rawTariff * GAS.kdv);
-    return { consumption, rawTariff, kdv, totalCost: r2(rawTariff + kdv), energyKwh };
+    let rawTariff = 0;
+    if (config.gasTiers && config.gasTiers.length > 0) {
+      let remaining = consumption;
+      let prevLimit = 0;
+      for (const tier of config.gasTiers) {
+        if (remaining <= 0) break;
+        const tierVolume = Math.min(remaining, tier.limit - prevLimit);
+        rawTariff += tierVolume * tier.rate;
+        remaining -= tierVolume;
+        prevLimit = tier.limit;
+      }
+    } else {
+      rawTariff = consumption * config.gasRate;
+    }
+
+    rawTariff = r2(rawTariff);
+    const ctvCost = r2(rawTariff * ctv);
+    const kdvCost = r2(rawTariff * kdv);
+    const totalCost = r2(rawTariff * (1 + kdv + ctv) + abonelikUcreti);
+    const energyKwh = r2(consumption * 10.64);
+
+    return {
+      consumption,
+      rawTariff,
+      ctv: ctvCost,
+      kdv: kdvCost,
+      totalCost,
+      energyKwh,
+    };
   }
 }
 
