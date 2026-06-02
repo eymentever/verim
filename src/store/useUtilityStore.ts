@@ -146,6 +146,8 @@ export interface BillBreakdown {
   kdv:         number;   // ₺
   totalCost:   number;   // ₺
   energyKwh?:  number;   // kWh (sadece gaz)
+  otv?:        number;   // ₺ (sadece gaz)
+  subCost:     number;   // ₺ (abonelik bedeli vergili)
 }
 
 export function getBillBreakdown(
@@ -155,8 +157,6 @@ export function getBillBreakdown(
   district?:   string,
 ): BillBreakdown {
   const config = getCityConfig(city);
-  const { kdv, ctv, abonelikUcreti } = config.taxes;
-
   const discountFactor = district ? getDistrictWaterMultiplier(city, district) : 1.0;
 
   if (type === 'water') {
@@ -173,15 +173,17 @@ export function getBillBreakdown(
     }
 
     rawTariff = r2(rawTariff);
-    const ctvCost = r2(rawTariff * ctv);
-    const kdvCost = r2(rawTariff * kdv);
-    const totalCost = r2(rawTariff * (1 + kdv + ctv) + (abonelikUcreti * discountFactor));
+    const kdvCost = r2(rawTariff * 0.04);
+    const ctvCost = r2(consumption * 4.00);
+    const subCost = r2((config.taxes.abonelikUcreti * discountFactor) * 1.10);
+    const totalCost = r2(rawTariff + kdvCost + ctvCost + subCost);
 
     return {
       consumption,
       rawTariff,
       ctv: ctvCost,
       kdv: kdvCost,
+      subCost,
       totalCost,
     };
   } else {
@@ -201,16 +203,18 @@ export function getBillBreakdown(
     }
 
     rawTariff = r2(rawTariff);
-    const ctvCost = r2(rawTariff * ctv);
-    const kdvCost = r2(rawTariff * kdv);
-    const totalCost = r2(rawTariff * (1 + kdv + ctv) + abonelikUcreti); // Gas fixed charge does not have regional discounts
+    const otvCost = r2(consumption * 0.074077);
+    const kdvCost = r2((rawTariff + otvCost) * 0.20);
+    const subCost = r2(config.taxes.abonelikUcreti * 1.20);
+    const totalCost = r2(rawTariff + otvCost + kdvCost + subCost);
     const energyKwh = r2(consumption * 10.64);
 
     return {
       consumption,
       rawTariff,
-      ctv: ctvCost,
       kdv: kdvCost,
+      otv: otvCost,
+      subCost,
       totalCost,
       energyKwh,
     };

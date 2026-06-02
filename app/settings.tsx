@@ -454,7 +454,7 @@ export default function SettingsScreen() {
 
             {editField === 'city' && (
               <View style={{ gap: 10, marginVertical: 12 }}>
-                {['İstanbul', 'Ankara', 'İzmir'].map(c => (
+                {['İstanbul', 'Ankara', 'İzmir', 'Sakarya'].map(c => (
                   <TouchableOpacity
                     key={c}
                     style={[s.modalRowBtn, editValue === c && s.modalRowBtnActive]}

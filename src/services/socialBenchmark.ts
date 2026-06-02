@@ -13,6 +13,7 @@ export const CITY_AVERAGES: Record<string, CityAverage> = {
   İstanbul: { city: 'İstanbul', avgMonthlyWater: 8.2,  avgMonthlyGas: 28.5, avgMonthlyCost: 820, sampleSize: 125400 },
   Ankara:   { city: 'Ankara',   avgMonthlyWater: 7.6,  avgMonthlyGas: 31.2, avgMonthlyCost: 740, sampleSize: 68200 },
   İzmir:    { city: 'İzmir',    avgMonthlyWater: 7.9,  avgMonthlyGas: 22.1, avgMonthlyCost: 680, sampleSize: 52100 },
+  Sakarya:  { city: 'Sakarya',  avgMonthlyWater: 7.8,  avgMonthlyGas: 29.0, avgMonthlyCost: 710, sampleSize: 22400 },
 };
 
 export interface BenchmarkResult {

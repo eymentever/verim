@@ -78,7 +78,7 @@ export default function SetupScreen() {
             <Text style={s.stepTitle}>Şehrin Hangisi?</Text>
             <Text style={s.stepDesc}>Doğru tarifeyi uygulayabilmemiz için şehrini seç.</Text>
             <View style={s.cityGrid}>
-              {['İstanbul', 'Ankara', 'İzmir'].map(c => (
+              {['İstanbul', 'Ankara', 'İzmir', 'Sakarya'].map(c => (
                 <TouchableOpacity
                   key={c}
                   style={[s.cityBtn, selectedCity === c && s.cityBtnActive]}
@@ -190,7 +190,7 @@ export default function SetupScreen() {
                 🔥 Gaz Birim Fiyatı: {config.gasRate.toFixed(3)} ₺/m³
               </Text>
               <Text style={s.tariffRow}>
-                🧾 Sabit Abonelik: {config.taxes.abonelikUcreti.toFixed(2)} ₺ · KDV %{(config.taxes.kdv * 100).toFixed(0)} dahil
+                🧾 Sabit Giderler: Su abonelik bedeli (%10 KDV) · Gaz servis bedeli (%20 KDV)
               </Text>
             </View>
           );

@@ -402,16 +402,18 @@ export default function ScanScreen() {
                   <Text style={s.sectionHead}>🧾 Tarife Dökümü</Text>
                   {meterType === 'water' ? (
                     <>
-                      <Row label="Ham Tarife (İSKİ kademeli)" value={`₺${breakdown.rawTariff.toFixed(2)}`} />
-                      <Row label="ÇTV (1.50 ₺/m³)"           value={`₺${(breakdown.ctv ?? 0).toFixed(2)}`} />
-                      <Row label="KDV (%10)"                  value={`₺${breakdown.kdv.toFixed(2)}`} />
+                      <Row label={`Su Tüketim Bedeli (${city})`} value={`₺${breakdown.rawTariff.toFixed(2)}`} />
+                      <Row label="Çevre Temizlik Vergisi (ÇTV)" value={`₺${(breakdown.ctv ?? 0).toFixed(2)}`} />
+                      <Row label="Bakım / Abonelik Gideri"     value={`₺${breakdown.subCost.toFixed(2)}`} />
+                      <Row label="KDV (Ortalama %4.0)"          value={`₺${breakdown.kdv.toFixed(2)}`} />
                     </>
                   ) : (
                     <>
-                      <Row label={`Enerji (${consumption.toFixed(2)} m³ × 10.64)`}
-                        value={`${breakdown.energyKwh?.toFixed(2) ?? '—'} kWh`} />
-                      <Row label="Ham Tarife (1.15 ₺/kWh)"   value={`₺${breakdown.rawTariff.toFixed(2)}`} />
-                      <Row label="KDV (%10)"                  value={`₺${breakdown.kdv.toFixed(2)}`} />
+                      <Row label="Enerji Eşdeğeri"             value={`${breakdown.energyKwh?.toFixed(1) ?? '—'} kWh`} />
+                      <Row label={`Gaz Tüketim Bedeli (${city})`} value={`₺${breakdown.rawTariff.toFixed(2)}`} />
+                      <Row label="ÖTV (Bakanlık 0.074 ₺/m³)"   value={`₺${(breakdown.otv ?? 0).toFixed(2)}`} />
+                      <Row label="Sabit Servis Bedeli"         value={`₺${breakdown.subCost.toFixed(2)}`} />
+                      <Row label="KDV (%20)"                    value={`₺${breakdown.kdv.toFixed(2)}`} />
                     </>
                   )}
                   <View style={[s.totalRow, { borderTopColor: color }]}>

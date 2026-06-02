@@ -94,6 +94,27 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
     currency: 'TRY',
     lastUpdated: '2026-06',
   },
+
+  Sakarya: {
+    city: 'Sakarya',
+    districts: [
+      'Adapazarı', 'Akyazı', 'Arifiye', 'Erenler', 'Ferizli', 'Geyve',
+      'Hendek', 'Karapürçek', 'Karasu', 'Kaynarca', 'Kocaali', 'Pamukova',
+      'Sapanca', 'Serdivan', 'Söğütlü', 'Taraklı'
+    ],
+    waterTiers: [
+      { limit: 15,  rate: 42.77 },   // SASKİ 2026 Konut 1 (su + atıksu)
+      { limit: 999, rate: 60.00 },   // 15+ m³
+    ],
+    gasRate: 13.00,   // AGDAŞ / Aksa 2026 konut tarifesi (₺/m³)
+    taxes: {
+      kdv: 0.10,
+      ctv: 0.02,
+      abonelikUcreti: 20.00,
+    },
+    currency: 'TRY',
+    lastUpdated: '2026-06',
+  },
 };
 
 export const DEFAULT_TARIFF: CityTariffConfig = {
@@ -151,6 +172,15 @@ export function getDistrictWaterMultiplier(city: string, district: string): numb
     }
   }
 
+  if (city === 'Sakarya') {
+    const outerDistricts = [
+      'Akyazı', 'Hendek', 'Karapürçek', 'Geyve', 'Pamukova', 'Taraklı',
+    ];
+    if (outerDistricts.includes(district)) {
+      return 0.80; // SASKİ Konut 2 çevre yerleşim/ilçe %20 resmi indirimli tarife
+    }
+  }
+
   return 1.0; // İstanbul ve diğer merkez ilçeler için standart tarife (%100)
 }
 
@@ -166,7 +196,7 @@ export function calculateWaterCost(
   if (!config) return 0;
 
   let remaining = consumption;
-  let cost = 0;
+  let rawTariff = 0;
   let prevLimit = 0;
 
   // İlçe bazlı resmi katsayı çarpanı
@@ -175,15 +205,21 @@ export function calculateWaterCost(
   for (const tier of config.waterTiers) {
     if (remaining <= 0) break;
     const tierVolume = Math.min(remaining, tier.limit - prevLimit);
-    cost += tierVolume * (tier.rate * discountFactor);
+    rawTariff += tierVolume * (tier.rate * discountFactor);
     remaining -= tierVolume;
     prevLimit = tier.limit;
   }
 
-  // Vergi uygula
-  const { kdv, ctv, abonelikUcreti } = config.taxes;
-  cost = cost * (1 + kdv + ctv) + (abonelikUcreti * discountFactor);
-  return Math.round(cost * 100) / 100;
+  // Resmi Bakanlık ve Belediye Vergilendirmesi (2026):
+  // 1. Su KDV (%1 su + %10 atıksu = Ortalama %4.0 KDV)
+  const kdvCost = rawTariff * 0.04;
+  // 2. ÇTV (Büyükşehirlerde m³ başına maktu 4.00 ₺)
+  const ctvCost = consumption * 4.00;
+  // 3. Sabit Bakım/Abonelik Ücreti (%10 KDV dahil)
+  const subCost = (config.taxes.abonelikUcreti * discountFactor) * 1.10;
+
+  const total = rawTariff + kdvCost + ctvCost + subCost;
+  return Math.round(total * 100) / 100;
 }
 
 /**
@@ -193,7 +229,7 @@ export function calculateGasCost(city: string, consumption: number): number {
   const config = getCityConfig(city);
   if (!config) return 0;
 
-  let cost = 0;
+  let rawTariff = 0;
 
   if (config.gasTiers && config.gasTiers.length > 0) {
     let remaining = consumption;
@@ -201,17 +237,24 @@ export function calculateGasCost(city: string, consumption: number): number {
     for (const tier of config.gasTiers) {
       if (remaining <= 0) break;
       const tierVolume = Math.min(remaining, tier.limit - prevLimit);
-      cost += tierVolume * tier.rate;
+      rawTariff += tierVolume * tier.rate;
       remaining -= tierVolume;
       prevLimit = tier.limit;
     }
   } else {
-    cost = consumption * config.gasRate;
+    rawTariff = consumption * config.gasRate;
   }
 
-  const { kdv, ctv, abonelikUcreti } = config.taxes;
-  cost = cost * (1 + kdv + ctv) + abonelikUcreti;
-  return Math.round(cost * 100) / 100;
+  // Resmi EPDK ve Maliye Bakanlığı Vergilendirmesi (2026):
+  // 1. ÖTV (Maktu 0.074077 ₺/m³)
+  const otvCost = consumption * 0.074077;
+  // 2. KDV (Tüketim bedeli ve ÖTV toplamı üzerinden %20)
+  const kdvCost = (rawTariff + otvCost) * 0.20;
+  // 3. Sabit Bakım/Servis Bedeli (%20 KDV dahil)
+  const subCost = config.taxes.abonelikUcreti * 1.20;
+
+  const total = rawTariff + otvCost + kdvCost + subCost;
+  return Math.round(total * 100) / 100;
 }
 
 /**
