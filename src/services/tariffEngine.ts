@@ -98,12 +98,42 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
   },
 };
 
-export function getCityConfig(city: string): CityTariffConfig | null {
-  return CITY_TARIFFS[city] ?? null;
+export const DEFAULT_TARIFF: CityTariffConfig = {
+  city: 'Genel',
+  districts: [],
+  waterTiers: [
+    { limit: 15,  rate: 30.00 },   // 0-15 m³
+    { limit: 999, rate: 45.00 },   // 15+ m³
+  ],
+  gasRate: 9.00,
+  taxes: {
+    kdv: 0.10,
+    ctv: 0.02,
+    abonelikUcreti: 20.00,
+  },
+  currency: 'TRY',
+  lastUpdated: '2026-01',
+};
+
+const ALL_TURKISH_CITIES = [
+  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya',
+  'Ardahan', 'Artvin', 'Aydın', 'Balıkesir', 'Bartın', 'Batman', 'Bayburt', 'Bilecik',
+  'Bingöl', 'Bitlis', 'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum',
+  'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir',
+  'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari', 'Hatay', 'Iğdır', 'Isparta', 'İstanbul',
+  'İzmir', 'Kahramanmaraş', 'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kırıkkale',
+  'Kırklareli', 'Kırşehir', 'Kilis', 'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa',
+  'Mardin', 'Mersin', 'Muğla', 'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye', 'Rize',
+  'Sakarya', 'Samsun', 'Siirt', 'Sinop', 'Sivas', 'Şanlıurfa', 'Şırnak', 'Tekirdağ',
+  'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van', 'Yalova', 'Yozgat', 'Zonguldak'
+].sort((a, b) => a.localeCompare(b, 'tr'));
+
+export function getCityConfig(city: string): CityTariffConfig {
+  return CITY_TARIFFS[city] ?? { ...DEFAULT_TARIFF, city };
 }
 
 export function getAllCities(): string[] {
-  return Object.keys(CITY_TARIFFS);
+  return ALL_TURKISH_CITIES;
 }
 
 export function getDistricts(city: string): string[] {

@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { C, FONT, RADIUS } from '../src/theme';
 import { useUtilityStore } from '../src/store/useUtilityStore';
 import { calculateBenchmark } from '../src/services/socialBenchmark';
+import { Thermometer, Droplet, Wind, Wrench, Home, Leaf, ChevronDown, ChevronUp } from 'lucide-react-native';
 
 const { width: SW } = Dimensions.get('window');
 const CHART_W = SW - 48;
@@ -21,13 +22,22 @@ const MONTHS = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','K
 // ── Enerji Tavsiyeleri ────────────────────────────────────────────────────────
 
 const TIPS = [
-  { icon: '🌡️', text: 'Kombiyi 1°C kısmak ayda ~₺80 tasarruf sağlar.',              saving: 80 },
-  { icon: '🚿', text: 'Duş süresini 2 dk kısaltmak aylık ~1.5 m³ su tasarrufu.',     saving: 45 },
-  { icon: '🪟', text: 'Pencere contası yenilemek ısı kaybını %15 azaltır.',           saving: 60 },
-  { icon: '🔧', text: 'Yıllık kombi bakımı verimini %18, ömrünü 5 yıl artırır.',     saving: 55 },
-  { icon: '💧', text: 'Damlayan musluk günde ~18 litre su israfı yaratır.',           saving: 25 },
-  { icon: '🏠', text: 'Çatı yalıtımı ısıtma maliyetini %20–30 düşürür.',             saving: 120 },
+  { type: 'temp', text: 'Kombiyi 1°C kısmak ayda ~₺80 tasarruf sağlar.',              saving: 80 },
+  { type: 'shower', text: 'Duş süresini 2 dk kısaltmak aylık ~1.5 m³ su tasarrufu.',     saving: 45 },
+  { type: 'window', text: 'Pencere contası yenilemek ısı kaybını %15 azaltır.',           saving: 60 },
+  { type: 'boiler', text: 'Yıllık kombi bakımı verimini %18, ömrünü 5 yıl artırır.',     saving: 55 },
+  { type: 'leak', text: 'Damlayan musluk günde ~18 litre su israfı yaratır.',           saving: 25 },
+  { type: 'insulation', text: 'Çatı yalıtımı ısıtma maliyetini %20–30 düşürür.',             saving: 120 },
 ];
+
+const TIP_ICONS = {
+  temp: { Icon: Thermometer, color: C.gas, bg: C.gasDim },
+  shower: { Icon: Droplet, color: C.water, bg: C.waterDim },
+  window: { Icon: Wind, color: C.gas, bg: C.gasDim },
+  boiler: { Icon: Wrench, color: C.gas, bg: C.gasDim },
+  leak: { Icon: Droplet, color: C.water, bg: C.waterDim },
+  insulation: { Icon: Home, color: C.brand, bg: C.brandDim },
+} as const;
 
 // ── Eco Score Hesapla ─────────────────────────────────────────────────────────
 
@@ -76,7 +86,7 @@ function EcoGauge({ score }: { score: number }) {
         </SvgText>
       </Svg>
       <Text style={[eg.label, { color }]}>
-        {score >= 75 ? '🌿 Çevre Dostu' : score >= 45 ? '⚖️ Ortalama' : '📈 Geliştirilebilir'}
+        {score >= 75 ? 'Çevre Dostu' : score >= 45 ? 'Ortalama Tüketim' : 'Geliştirilebilir'}
       </Text>
     </View>
   );
@@ -256,9 +266,9 @@ export default function AnalyticsScreen() {
             <View key={i} style={s.monthRow}>
               <Text style={s.monthLabel}>{m.label}</Text>
               <View style={s.monthVals}>
-                <Text style={[s.monthVal, { color: C.water }]}>💧 ₺{m.water.toFixed(0)}</Text>
+                <Text style={[s.monthVal, { color: C.water }]}>Su: ₺{m.water.toFixed(0)}</Text>
                 <Text style={s.monthSep}>·</Text>
-                <Text style={[s.monthVal, { color: C.gas }]}>🔥 ₺{m.gas.toFixed(0)}</Text>
+                <Text style={[s.monthVal, { color: C.gas }]}>Gaz: ₺{m.gas.toFixed(0)}</Text>
                 <Text style={s.monthSep}>·</Text>
                 <Text style={[s.monthVal, { color: C.text, fontWeight: '700' }]}>₺{m.total.toFixed(0)}</Text>
               </View>
@@ -268,30 +278,42 @@ export default function AnalyticsScreen() {
 
         {/* ── Enerji Tavsiyeleri ─────────────────────── */}
         <View style={s.tipsCard}>
-          <Text style={s.sectionLabel}>💡 Tasarruf Tavsiyeleri</Text>
-          {TIPS.map((tip, i) => (
-            <TouchableOpacity
-              key={i}
-              style={[s.tipRow, expandedTip === i && { backgroundColor: `${C.brand}08` }]}
-              onPress={() => setExpanded(expandedTip === i ? null : i)}
-              activeOpacity={0.8}
-            >
-              <Text style={s.tipIcon}>{tip.icon}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={s.tipText}>{tip.text}</Text>
-                {expandedTip === i && (
-                  <Text style={s.tipSaving}>Aylık ~₺{tip.saving} tasarruf potansiyeli ✓</Text>
+          <Text style={s.sectionLabel}>Tasarruf Tavsiyeleri</Text>
+          {TIPS.map((tip, i) => {
+            const iconConfig = TIP_ICONS[tip.type as keyof typeof TIP_ICONS];
+            const TipIcon = iconConfig.Icon;
+            return (
+              <TouchableOpacity
+                key={i}
+                style={[s.tipRow, expandedTip === i && { backgroundColor: `${C.brand}08` }]}
+                onPress={() => setExpanded(expandedTip === i ? null : i)}
+                activeOpacity={0.8}
+              >
+                <View style={[s.tipIconBadge, { backgroundColor: iconConfig.bg }]}>
+                  <TipIcon size={16} color={iconConfig.color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.tipText}>{tip.text}</Text>
+                  {expandedTip === i && (
+                    <Text style={s.tipSaving}>Aylık ~₺{tip.saving} tasarruf potansiyeli</Text>
+                  )}
+                </View>
+                {expandedTip === i ? (
+                  <ChevronUp size={16} color={C.textDim} />
+                ) : (
+                  <ChevronDown size={16} color={C.textDim} />
                 )}
-              </View>
-              <Text style={s.tipChev}>{expandedTip === i ? '▲' : '▼'}</Text>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* ── Green Badge ────────────────────────────── */}
         <View style={s.badgeCard}>
           <View style={s.badgeRow}>
-            <Text style={s.badgeEmoji}>🌿</Text>
+            <View style={[s.badgeIconBadge, { backgroundColor: 'rgba(0, 255, 157, 0.1)' }]}>
+              <Leaf size={24} color={C.brand} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={s.badgeTitle}>Yeşil Rozet — Eco {ecoScore}/100</Text>
               <Text style={s.badgeSub}>{benchmark?.badge ?? 'Veri toplanıyor...'}</Text>
@@ -333,7 +355,7 @@ const sc = StyleSheet.create({
 
 const s = StyleSheet.create({
   root:        { flex: 1, backgroundColor: C.bg },
-  scroll:      { padding: 24, paddingBottom: 48 },
+  scroll:      { padding: 24, paddingBottom: 110 },
   header:      { marginBottom: 20, paddingTop: 48 },
   title:       { color: C.text, fontSize: FONT['2xl'], fontWeight: '900' },
   sub:         { color: C.textDim, fontSize: FONT.sm, marginTop: 2 },
@@ -366,14 +388,14 @@ const s = StyleSheet.create({
 
   // Tips
   tipsCard:    { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: C.cardBorder },
-  tipRow:      { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.divider, gap: 10, borderRadius: RADIUS.sm },
-  tipIcon:     { fontSize: 20, marginTop: 1 },
+  tipRow:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.divider, gap: 12, borderRadius: RADIUS.sm },
+  tipIconBadge:{ width: 32, height: 32, borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center' },
   tipText:     { color: C.text, fontSize: FONT.sm, lineHeight: 18, flex: 1 },
   tipSaving:   { color: C.brand, fontSize: FONT.xs, marginTop: 4, fontWeight: '700' },
-  tipChev:     { color: C.textDim, fontSize: FONT.xs, marginTop: 4 },
-
+  
   // Badge
   badgeCard:   { backgroundColor: C.brandDim, borderRadius: RADIUS.lg, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: `${C.brand}30` },
+  badgeIconBadge: { width: 44, height: 44, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
   badgeRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
   badgeEmoji:  { fontSize: 32 },
   badgeTitle:  { color: C.brand, fontWeight: '800', fontSize: FONT.md },

@@ -7,6 +7,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { encryptData, decryptData } from '../utils/security';
 
 // ── Tipler ────────────────────────────────────────────────────────────────────
 
@@ -174,7 +175,7 @@ interface UtilityState {
   logs:             ConsumptionLog[];
 
   setProfile:          (p: Partial<UserProfile>) => void;
-  completeSetup:       (city: string, district: string, name?: string) => void;
+  completeSetup:       (city: string, district: string, name?: string, address?: string) => void;
   addProperty:         (p: Property) => void;
   removeProperty:      (id: string) => void;
   setActiveProperty:   (id: string) => void;
@@ -201,9 +202,9 @@ export const useUtilityStore = create<UtilityState>()(
       setProfile: (p) =>
         set(s => ({ profile: { ...s.profile, ...p } })),
 
-      completeSetup: (city, district, name) => {
+      completeSetup: (city, district, name, address) => {
         const id   = `prop_${Date.now()}`;
-        const prop: Property = { id, name: 'Ana Mülk', city, district, type: 'home' };
+        const prop: Property = { id, name: 'Ana Mülk', city, district, address, type: 'home' };
         set(s => ({
           profile:          { ...s.profile, city, district, name: name ?? s.profile.name, setupComplete: true },
           properties:       [prop],
@@ -254,7 +255,25 @@ export const useUtilityStore = create<UtilityState>()(
     }),
     {
       name:    'verim-utility-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => ({
+        getItem: async (name) => {
+          const value = await AsyncStorage.getItem(name);
+          if (!value) return null;
+          try {
+            const decrypted = decryptData(value);
+            return decrypted || null;
+          } catch (e) {
+            return value;
+          }
+        },
+        setItem: async (name, value) => {
+          const encrypted = encryptData(value);
+          await AsyncStorage.setItem(name, encrypted);
+        },
+        removeItem: async (name) => {
+          await AsyncStorage.removeItem(name);
+        },
+      })),
     },
   ),
 );

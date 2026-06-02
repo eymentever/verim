@@ -6,6 +6,8 @@ import {
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { C, FONT, RADIUS, SHADOW } from '../src/theme';
+import { Droplet, Flame, Leaf, AlertTriangle } from 'lucide-react-native';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useUtilityStore } from '../src/store/useUtilityStore';
 import { useSubscriptionStore } from '../src/store/useSubscriptionStore';
 import { analyzeConsumption } from '../src/services/leakDetectionService';
@@ -24,11 +26,11 @@ interface RingProps {
   dimColor: string;
   label:    string;
   amount:   string;
-  emoji:    string;
+  IconComponent: any;
   unit:     string;
 }
 
-function RingGauge({ ratio, color, dimColor, label, amount, emoji, unit }: RingProps) {
+function RingGauge({ ratio, color, dimColor, label, amount, IconComponent, unit }: RingProps) {
   const clamp = Math.max(0, Math.min(1, ratio));
   const fill  = CIRC * (1 - clamp);
   const cx    = GAUGE_SIZE / 2;
@@ -55,7 +57,9 @@ function RingGauge({ ratio, color, dimColor, label, amount, emoji, unit }: RingP
           rotation="-90" origin={`${cx},${cy}`} />
       </Svg>
       <View style={rg.center}>
-        <Text style={rg.emoji}>{emoji}</Text>
+        <View style={[rg.iconBadge, { backgroundColor: dimColor }]}>
+          <IconComponent size={18} color={color} strokeWidth={2.5} />
+        </View>
         <Text style={[rg.label, { color }]}>{label}</Text>
         <Text style={rg.amount}>{amount}</Text>
         <Text style={rg.unit}>{unit}</Text>
@@ -65,13 +69,13 @@ function RingGauge({ ratio, color, dimColor, label, amount, emoji, unit }: RingP
 }
 
 const rg = StyleSheet.create({
-  wrap:   { position: 'relative', alignItems: 'center', justifyContent: 'center' },
-  svg:    { position: 'absolute' },
-  center: { alignItems: 'center', gap: 1 },
-  emoji:  { fontSize: 20 },
-  label:  { fontSize: FONT.xs, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.8 },
-  amount: { fontSize: FONT.xl, fontWeight: '900', color: C.text },
-  unit:   { fontSize: FONT.xs, color: C.textDim },
+  wrap:      { position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  svg:       { position: 'absolute' },
+  center:    { alignItems: 'center', gap: 3 },
+  iconBadge: { width: 32, height: 32, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
+  label:     { fontSize: FONT.xs, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.8 },
+  amount:    { fontSize: FONT.xl, fontWeight: '900', color: C.text },
+  unit:      { fontSize: FONT.xs, color: C.textDim },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -201,14 +205,14 @@ export default function Dashboard() {
           <RingGauge
             ratio={MONTHLY_BUDGET > 0 ? stats.waterCost / (MONTHLY_BUDGET * 0.5) : 0}
             color={C.water} dimColor={C.waterDim}
-            label="Su" emoji="💧"
+            label="Su" IconComponent={Droplet}
             amount={`₺${stats.waterCost.toFixed(0)}`}
             unit={`${stats.waterM3.toFixed(1)} m³`}
           />
           <RingGauge
             ratio={MONTHLY_BUDGET > 0 ? stats.gasCost / (MONTHLY_BUDGET * 0.5) : 0}
             color={C.gas} dimColor={C.gasDim}
-            label="Gaz" emoji="🔥"
+            label="Gaz" IconComponent={Flame}
             amount={`₺${stats.gasCost.toFixed(0)}`}
             unit={`${stats.gasM3.toFixed(1)} m³`}
           />
@@ -222,7 +226,7 @@ export default function Dashboard() {
               ? { borderColor: C.danger, backgroundColor: C.dangerDim, transform: [{ scale: pulseAnim }] }
               : { borderColor: C.warn,   backgroundColor: C.warnDim },
           ]}>
-            <Text style={s.alertIcon}>{anomaly.level === 'critical' ? '🚨' : '⚠️'}</Text>
+            <AlertTriangle size={24} color={anomaly.level === 'critical' ? C.danger : C.warn} style={{ marginTop: 2 }} />
             <View style={{ flex: 1 }}>
               <Text style={[s.alertTitle, { color: anomaly.level === 'critical' ? C.danger : C.warn }]}>
                 {anomaly.title}
@@ -264,7 +268,9 @@ export default function Dashboard() {
         {/* ── Native Reklam (Free) ───────────────────── */}
         {plan.adsEnabled && (
           <TouchableOpacity style={s.ad} onPress={() => router.push('/marketplace')} activeOpacity={0.85}>
-            <Text style={s.adEmoji}>🌿</Text>
+            <View style={s.adIconBadge}>
+              <Leaf size={18} color={C.brand} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={s.adTitle}>Su Tasarrufu Ürünleri — EcoFlow TR</Text>
               <Text style={s.adSub}>Tüketimini %40 düşür · Reklam</Text>
@@ -290,50 +296,78 @@ export default function Dashboard() {
         {activeLogs.length > 0 && (
           <View style={s.recentCard}>
             <Text style={s.sectionLabel}>Son Kayıtlar</Text>
-            {activeLogs.slice(0, 4).map(log => (
-              <View key={log.id} style={s.logRow}>
-                <Text style={s.logIcon}>{log.type === 'water' ? '💧' : '🔥'}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.logDate}>{new Date(log.date).toLocaleDateString('tr-TR')}</Text>
-                  <Text style={s.logSub}>
-                    Endeks: {log.indexValue} m³ · Tüketim: {log.consumption.toFixed(1)} m³
+            {activeLogs.slice(0, 4).map(log => {
+              const LogIcon = log.type === 'water' ? Droplet : Flame;
+              const logColor = log.type === 'water' ? C.water : C.gas;
+              const logBg = log.type === 'water' ? C.waterDim : C.gasDim;
+              return (
+                <View key={log.id} style={s.logRow}>
+                  <View style={[s.logIconBadge, { backgroundColor: logBg }]}>
+                    <LogIcon size={16} color={logColor} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.logDate}>{new Date(log.date).toLocaleDateString('tr-TR')}</Text>
+                    <Text style={s.logSub}>
+                      Endeks: {log.indexValue} m³ · Tüketim: {log.consumption.toFixed(1)} m³
+                    </Text>
+                  </View>
+                  <Text style={[s.logCost, { color: logColor }]}>
+                    ₺{log.cost.toFixed(2)}
                   </Text>
                 </View>
-                <Text style={[s.logCost, { color: log.type === 'water' ? C.water : C.gas }]}>
-                  ₺{log.cost.toFixed(2)}
-                </Text>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
 
         {/* ── Floating Action Buttons ───────────────── */}
         <View style={s.fabRow}>
           <TouchableOpacity
-            style={[s.fab, { backgroundColor: C.waterDim, borderColor: `${C.water}50` }, SHADOW.water]}
+            style={[s.fab, { borderColor: `${C.water}40` }, SHADOW.water]}
             onPress={() => canScanWater ? router.push('/scan') : router.push('/paywall')}
             activeOpacity={0.8}
           >
-            <Text style={s.fabEmoji}>💧</Text>
-            <Text style={[s.fabLabel, { color: C.water }]}>Su Tara</Text>
+            <ExpoLinearGradient
+              colors={['rgba(6, 182, 212, 0.12)', 'rgba(7, 10, 19, 0.2)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.fabGrad}
+            >
+              <Droplet size={22} color={C.water} strokeWidth={2.5} />
+              <Text style={[s.fabLabel, { color: C.water }]}>Su Tara</Text>
+            </ExpoLinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[s.fab, { backgroundColor: C.gasDim, borderColor: `${C.gas}50` }, SHADOW.gas]}
+            style={[s.fab, { borderColor: `${C.gas}40` }, SHADOW.gas]}
             onPress={() => canScanGas ? router.push('/scan') : router.push('/paywall')}
             activeOpacity={0.8}
           >
-            <Text style={s.fabEmoji}>🔥</Text>
-            <Text style={[s.fabLabel, { color: C.gas }]}>Gaz Tara</Text>
+            <ExpoLinearGradient
+              colors={['rgba(245, 158, 11, 0.12)', 'rgba(7, 10, 19, 0.2)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.fabGrad}
+            >
+              <Flame size={22} color={C.gas} strokeWidth={2.5} />
+              <Text style={[s.fabLabel, { color: C.gas }]}>Gaz Tara</Text>
+            </ExpoLinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[s.fab, { backgroundColor: C.brandDim, borderColor: `${C.brand}50` }, SHADOW.brand]}
+            style={[s.fab, { borderColor: `${C.brand}40` }, SHADOW.brand]}
             onPress={() => router.push('/marketplace')}
             activeOpacity={0.8}
           >
-            <Text style={s.fabEmoji}>🌿</Text>
-            <Text style={[s.fabLabel, { color: C.brand }]}>Market</Text>
+            <ExpoLinearGradient
+              colors={['rgba(0, 255, 157, 0.12)', 'rgba(7, 10, 19, 0.2)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.fabGrad}
+            >
+              <Leaf size={22} color={C.brand} strokeWidth={2.5} />
+              <Text style={[s.fabLabel, { color: C.brand }]}>Market</Text>
+            </ExpoLinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -344,7 +378,7 @@ export default function Dashboard() {
 
 const s = StyleSheet.create({
   root:           { flex: 1, backgroundColor: C.bg },
-  scroll:         { padding: 20, paddingBottom: 40 },
+  scroll:         { padding: 20, paddingBottom: 110 },
 
   // Header
   header:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingTop: 48 },
@@ -384,7 +418,7 @@ const s = StyleSheet.create({
 
   // Ad
   ad:             { flexDirection: 'row', alignItems: 'center', backgroundColor: C.brandDim, borderWidth: 1, borderColor: `${C.brand}25`, borderRadius: RADIUS.md, padding: 12, marginBottom: 14, gap: 10 },
-  adEmoji:        { fontSize: 20 },
+  adIconBadge:    { width: 36, height: 36, borderRadius: RADIUS.sm, backgroundColor: 'rgba(0,255,157,0.06)', alignItems: 'center', justifyContent: 'center' },
   adTitle:        { color: C.text, fontSize: FONT.sm, fontWeight: '600' },
   adSub:          { color: C.textDim, fontSize: FONT.xs },
   adArrow:        { fontWeight: '800', fontSize: FONT.lg },
@@ -401,14 +435,13 @@ const s = StyleSheet.create({
   recentCard:     { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: C.cardBorder },
   sectionLabel:   { color: C.textDim, fontSize: FONT.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 },
   logRow:         { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.divider },
-  logIcon:        { fontSize: 18, marginRight: 10 },
+  logIconBadge:   { width: 32, height: 32, borderRadius: RADIUS.sm, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', marginRight: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.03)' },
   logDate:        { color: C.text, fontSize: FONT.sm, fontWeight: '600' },
   logSub:         { color: C.textDim, fontSize: FONT.xs, marginTop: 2 },
   logCost:        { fontWeight: '900', fontSize: FONT.md },
 
   // FABs
   fabRow:         { flexDirection: 'row', gap: 10 },
-  fab:            { flex: 1, borderRadius: RADIUS.lg, paddingVertical: 18, alignItems: 'center', gap: 6, borderWidth: 1 },
   fabEmoji:       { fontSize: 24 },
   fabLabel:       { fontSize: FONT.sm, fontWeight: '800' },
 });

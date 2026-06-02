@@ -1,33 +1,35 @@
 import React, { useEffect } from 'react';
-import { Tabs, Redirect } from 'expo-router';
+import { Tabs, useRouter, usePathname } from 'expo-router';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { C } from '../src/theme';
 import { useUtilityStore } from '../src/store/useUtilityStore';
 import { initRevenueCat } from '../src/services/revenueCatService';
+import { Home, Camera, BarChart3, Settings } from 'lucide-react-native';
 
 // Splash screen'i otomatik kapanmaktan koru; biz kontrol edeceğiz
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
+function TabIcon({ IconComponent, label, focused }: { IconComponent: any; label: string; focused: boolean }) {
+  const color = focused ? C.brand : C.textMuted;
   return (
-    <View style={[ti.wrap, focused && ti.wrapActive]}>
-      <Text style={ti.emoji}>{emoji}</Text>
+    <View style={ti.wrap}>
+      <IconComponent size={20} color={color} strokeWidth={focused ? 2.5 : 2} />
       <Text style={[ti.label, focused && ti.labelActive]}>{label}</Text>
     </View>
   );
 }
 
 const ti = StyleSheet.create({
-  wrap:        { alignItems: 'center', paddingTop: 6, gap: 2 },
-  wrapActive:  {},
-  emoji:       { fontSize: 20 },
-  label:       { fontSize: 10, fontWeight: '600', color: C.textMuted },
+  wrap:        { alignItems: 'center', justifyContent: 'center', height: '100%', paddingVertical: 10 },
+  label:       { fontSize: 9, fontWeight: '800', color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 4 },
   labelActive: { color: C.brand },
 });
 
 export default function RootLayout() {
   const { profile } = useUtilityStore();
+  const router = useRouter();
+  const pathname = usePathname();
 
   // RevenueCat başlat ve splash'ı kapat
   useEffect(() => {
@@ -35,34 +37,44 @@ export default function RootLayout() {
     SplashScreen.hideAsync().catch(() => {});
   }, []);
 
-  // Setup tamamlanmadıysa Redirect ile setup'a yönlendir.
-  // Redirect, navigator mount olduktan SONRA render edilir — race condition yok.
-  const setupRedirect = !profile.setupComplete
-    ? <Redirect href="/setup" />
-    : null;
+  // Setup tamamlanmadıysa setup'a yönlendir.
+  useEffect(() => {
+    if (!profile.setupComplete && pathname !== '/setup') {
+      router.replace('/setup');
+    }
+  }, [profile.setupComplete, pathname]);
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: C.card,
-          borderTopColor: C.border,
-          borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 82 : 62,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          position: 'absolute',
+          bottom: Platform.OS === 'ios' ? 28 : 20,
+          left: 20,
+          right: 20,
+          backgroundColor: 'rgba(13, 20, 36, 0.94)', // Translucent card background
+          borderRadius: 24,
+          height: 68,
+          paddingBottom: 0,
+          borderTopWidth: 0,
+          borderWidth: 1,
+          borderColor: 'rgba(255, 255, 255, 0.08)',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.45,
+          shadowRadius: 18,
+          elevation: 12,
         },
         tabBarShowLabel: false,
       }}
     >
-      {/* Setup redirect — navigator mount sonrası güvenli */}
-      {setupRedirect}
 
       <Tabs.Screen
         name="index"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🏠" label="Ana Sayfa" focused={focused} />
+            <TabIcon IconComponent={Home} label="Ana Sayfa" focused={focused} />
           ),
         }}
       />
@@ -70,7 +82,7 @@ export default function RootLayout() {
         name="scan"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="📷" label="Tara" focused={focused} />
+            <TabIcon IconComponent={Camera} label="Tara" focused={focused} />
           ),
         }}
       />
@@ -78,7 +90,7 @@ export default function RootLayout() {
         name="analytics"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="📊" label="Analiz" focused={focused} />
+            <TabIcon IconComponent={BarChart3} label="Analiz" focused={focused} />
           ),
         }}
       />
@@ -86,7 +98,7 @@ export default function RootLayout() {
         name="settings"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="⚙️" label="Ayarlar" focused={focused} />
+            <TabIcon IconComponent={Settings} label="Ayarlar" focused={focused} />
           ),
         }}
       />

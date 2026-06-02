@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { C, FONT, RADIUS } from '../src/theme';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import { useUtilityStore } from '../src/store/useUtilityStore';
 import {
   getRecommendations, getAllProducts,
@@ -49,7 +50,9 @@ function ProductCard({
         </View>
       )}
       <View style={s.cardHeader}>
-        <Text style={s.emoji}>{product.imageEmoji}</Text>
+        <View style={s.productIconBadge}>
+          <Text style={s.emoji}>{product.imageEmoji}</Text>
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={s.productName}>{product.name}</Text>
           <Text style={s.productMeta}>{product.brand} · {CATEGORY_LABELS[product.category]}</Text>
@@ -87,9 +90,9 @@ export default function MarketplaceScreen() {
 
         <View style={s.header}>
           <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-            <Text style={s.backText}>← Geri</Text>
+            <ArrowLeft size={24} color={C.water} />
           </TouchableOpacity>
-          <Text style={s.title}>Yeşil Enerji 🌿</Text>
+          <Text style={s.title}>Yeşil Enerji</Text>
           <View style={{ width: 60 }} />
         </View>
         <Text style={s.subtitle}>Tüketimine göre kişisel tasarruf önerileri</Text>
@@ -118,8 +121,8 @@ export default function MarketplaceScreen() {
               ))
             : (
               <View style={s.empty}>
-                <Text style={s.emptyIcon}>✅</Text>
-                <Text style={s.emptyTitle}>Tüketimin Normal Görünüyor</Text>
+                <CheckCircle2 size={40} color={C.brand} style={{ marginBottom: 12 }} />
+                <Text style={s.emptyTitle}>Tüketim Normal Görünüyor</Text>
                 <Text style={s.emptyDesc}>Kişisel öneri için en az 4 kayıt gerekli. Tüm ürünlere göz at.</Text>
                 <TouchableOpacity onPress={() => setTab('all')} style={[s.emptyBtn, { backgroundColor: C.water }]}>
                   <Text style={[s.emptyBtnText, { color: C.bg }]}>Tüm Ürünler →</Text>
@@ -142,7 +145,7 @@ export default function MarketplaceScreen() {
 
 const s = StyleSheet.create({
   root:          { flex: 1, backgroundColor: C.bg },
-  scroll:        { padding: 20, paddingBottom: 48 },
+  scroll:        { padding: 20, paddingBottom: 110 },
   header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, paddingTop: 48 },
   backBtn:       { width: 60 },
   backText:      { color: C.water, fontSize: FONT.md, fontWeight: '600' },
@@ -154,8 +157,9 @@ const s = StyleSheet.create({
   card:          { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: C.cardBorder },
   urgBadge:      { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.full, marginBottom: 10 },
   urgText:       { fontSize: FONT.xs, fontWeight: '700' },
-  cardHeader:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 8 },
-  emoji:         { fontSize: 30 },
+  cardHeader:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+  productIconBadge: { width: 50, height: 50, borderRadius: RADIUS.md, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
+  emoji:         { fontSize: 24 },
   productName:   { color: C.text, fontSize: FONT.md, fontWeight: '700' },
   productMeta:   { color: C.textDim, fontSize: FONT.xs, marginTop: 2 },
   priceBox:      { borderRadius: RADIUS.sm, paddingHorizontal: 10, paddingVertical: 6 },

@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { C, FONT, RADIUS } from '../src/theme';
+import { User, CreditCard, Shield, FileText, Trash2, MapPin, Home, Droplet, Flame } from 'lucide-react-native';
 import { useUtilityStore } from '../src/store/useUtilityStore';
 import { useSubscriptionStore, PLANS } from '../src/store/useSubscriptionStore';
 import { generateHandoverPDF } from '../src/services/pdfReportService';
@@ -27,10 +28,13 @@ function SectionTitle({ title }: { title: string }) {
 
 // ── Satır bileşeni ────────────────────────────────────────────────────────────
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, Icon }: { label: string; value: string; Icon?: any }) {
   return (
     <View style={st.infoRow}>
-      <Text style={st.infoLabel}>{label}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {Icon && <Icon size={16} color={C.textDim} strokeWidth={2} />}
+        <Text style={st.infoLabel}>{label}</Text>
+      </View>
       <Text style={st.infoValue}>{value}</Text>
     </View>
   );
@@ -38,7 +42,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 const st = StyleSheet.create({
   sTitle:    { color: C.textDim, fontSize: FONT.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, marginTop: 4 },
-  infoRow:   { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.divider },
+  infoRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.divider },
   infoLabel: { color: C.textDim, fontSize: FONT.sm },
   infoValue: { color: C.text, fontSize: FONT.sm, fontWeight: '600' },
 });
@@ -104,7 +108,7 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={s.header}>
-          <Text style={s.title}>Ayarlar ⚙️</Text>
+          <Text style={s.title}>Ayarlar</Text>
         </View>
 
         {/* ── Abonelik Durumu ────────────────────────── */}
@@ -139,9 +143,9 @@ export default function SettingsScreen() {
             placeholderTextColor={C.textMuted}
             maxLength={40}
           />
-          <InfoRow label="Aktif Şehir" value={prop?.city     ?? store.profile.city} />
-          <InfoRow label="İlçe"        value={prop?.district ?? store.profile.district} />
-          <InfoRow label="Mülk Adı"    value={prop?.name     ?? '—'} />
+          <InfoRow label="Aktif Şehir" value={prop?.city     ?? store.profile.city} Icon={MapPin} />
+          <InfoRow label="İlçe"        value={prop?.district ?? store.profile.district} Icon={MapPin} />
+          <InfoRow label="Mülk Adı"    value={prop?.name     ?? '—'} Icon={Home} />
           <TouchableOpacity style={[s.saveBtn, { backgroundColor: C.water }]} onPress={handleSaveName}>
             <Text style={[s.saveBtnText, { color: C.bg }]}>Kaydet</Text>
           </TouchableOpacity>
@@ -238,16 +242,19 @@ export default function SettingsScreen() {
             <SectionTitle title="Son Endeks Değerleri" />
             <View style={s.card}>
               <InfoRow
-                label="💧 Su (son endeks)"
+                label="Su (son endeks)"
                 value={`${store.lastIndexForType(prop.id, 'water') ?? '—'} m³`}
+                Icon={Droplet}
               />
               <InfoRow
-                label="🔥 Gaz (son endeks)"
+                label="Gaz (son endeks)"
                 value={`${store.lastIndexForType(prop.id, 'gas') ?? '—'} m³`}
+                Icon={Flame}
               />
               <InfoRow
                 label="Toplam Kayıt"
                 value={`${activeLogs.length} adet`}
+                Icon={FileText}
               />
             </View>
           </>
@@ -289,11 +296,17 @@ export default function SettingsScreen() {
                 Alert.alert('✓ Silindi', 'Tüm veriler temizlendi.');
               }},
             ])}>
-            <Text style={[st.infoLabel, { color: C.danger }]}>🗑️ Tüm Verileri Sil</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Trash2 size={16} color={C.danger} strokeWidth={2} />
+              <Text style={[st.infoLabel, { color: C.danger }]}>Tüm Verileri Temizle</Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={st.infoRow}
             onPress={() => Alert.alert('Gizlilik', 'verim.app/privacy')}>
-            <Text style={st.infoLabel}>🔏 Gizlilik Politikası</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Shield size={16} color={C.textDim} strokeWidth={2} />
+              <Text style={st.infoLabel}>Gizlilik Politikası</Text>
+            </View>
           </TouchableOpacity>
           <Text style={s.version}>Verim v1.0.0 · Su & Doğalgaz Takip</Text>
         </View>
@@ -305,7 +318,7 @@ export default function SettingsScreen() {
 
 const s = StyleSheet.create({
   root:             { flex: 1, backgroundColor: C.bg },
-  scroll:           { padding: 20, paddingBottom: 60 },
+  scroll:           { padding: 20, paddingBottom: 110 },
   header:           { marginBottom: 20, paddingTop: 48 },
   title:            { color: C.text, fontSize: FONT.xl, fontWeight: '900' },
 

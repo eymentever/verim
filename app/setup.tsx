@@ -3,19 +3,31 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert 
 import { useRouter } from 'expo-router';
 import { C, FONT, RADIUS } from '../src/theme';
 import { useUtilityStore } from '../src/store/useUtilityStore';
-import { getAllCities, getDistricts } from '../src/services/tariffEngine';
+import { getAllCities, getDistricts, getCityConfig } from '../src/services/tariffEngine';
+import { Sparkles, Check } from 'lucide-react-native';
 
-const CITIES = getAllCities();
+const CITIES = [
+  'İstanbul',
+  'Ankara',
+  'İzmir',
+  ...getAllCities().filter(c => c !== 'İstanbul' && c !== 'Ankara' && c !== 'İzmir')
+];
 
 export default function SetupScreen() {
   const router = useRouter();
   const { completeSetup } = useUtilityStore();
 
-  const [step, setStep]                   = useState<1 | 2 | 3>(1);
+  const [step, setStep]                   = useState<1 | 2 | 3 | 4>(1);
   const [name, setName]                   = useState('');
   const [selectedCity, setSelectedCity]   = useState('');
+  const [citySearch, setCitySearch]       = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [districtSearch, setDistrictSearch]     = useState('');
+  const [address, setAddress]             = useState('');
+
+  const filteredCities = CITIES.filter(c =>
+    c.toLowerCase().includes(citySearch.toLowerCase())
+  );
 
   const districts         = selectedCity ? getDistricts(selectedCity) : [];
   const filteredDistricts = districts.filter(d =>
@@ -27,7 +39,7 @@ export default function SetupScreen() {
       Alert.alert('Eksik Bilgi', 'Lütfen şehir ve ilçe seçin.');
       return;
     }
-    completeSetup(selectedCity, selectedDistrict, name.trim() || undefined);
+    completeSetup(selectedCity, selectedDistrict, name.trim() || undefined, address.trim() || undefined);
     router.replace('/');
   };
 
@@ -37,14 +49,16 @@ export default function SetupScreen() {
 
         {/* Logo */}
         <View style={s.logoArea}>
-          <Text style={s.logo}>💡</Text>
+          <View style={s.logoBadge}>
+            <Sparkles size={40} color={C.brand} />
+          </View>
           <Text style={s.appName}>Verim</Text>
           <Text style={s.tagline}>Akıllı Sayaç & Fatura Takibi</Text>
         </View>
 
         {/* Adım İndikatörü */}
         <View style={s.steps}>
-          {[1, 2, 3].map(n => (
+          {[1, 2, 3, 4].map(n => (
             <View key={n} style={[s.stepDot, step >= n && s.stepDotActive]}>
               <Text style={[s.stepNum, step >= n && s.stepNumActive]}>{n}</Text>
             </View>
@@ -75,17 +89,25 @@ export default function SetupScreen() {
           <View style={s.card}>
             <Text style={s.stepTitle}>Şehrin Hangisi?</Text>
             <Text style={s.stepDesc}>Doğru tarifeyi uygulayabilmemiz için şehrini seç.</Text>
-            <View style={s.cityGrid}>
-              {CITIES.map(c => (
+            <TextInput
+              style={s.input}
+              placeholder="Şehir ara..."
+              placeholderTextColor={C.textMuted}
+              value={citySearch}
+              onChangeText={setCitySearch}
+            />
+            <ScrollView style={s.cityList} nestedScrollEnabled>
+              {filteredCities.map(c => (
                 <TouchableOpacity
                   key={c}
-                  style={[s.cityBtn, selectedCity === c && s.cityBtnActive]}
+                  style={s.cityRowBtn}
                   onPress={() => { setSelectedCity(c); setSelectedDistrict(''); setDistrictSearch(''); }}
                 >
-                  <Text style={[s.cityLabel, selectedCity === c && { color: C.water }]}>{c}</Text>
+                  <Text style={[s.cityRowLabel, selectedCity === c && { color: C.water, fontWeight: '700' }]}>{c}</Text>
+                  {selectedCity === c && <Check size={16} color={C.water} strokeWidth={3} />}
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
             <TouchableOpacity
               style={[s.primaryBtn, !selectedCity && s.btnDisabled]}
               disabled={!selectedCity}
@@ -100,29 +122,68 @@ export default function SetupScreen() {
         {step === 3 && (
           <View style={s.card}>
             <Text style={s.stepTitle}>{selectedCity} — İlçen?</Text>
-            <Text style={s.stepDesc}>Belediyeye göre tarife farkı olabilir.</Text>
+            {districts.length > 0 ? (
+              <>
+                <Text style={s.stepDesc}>Belediyeye göre tarife farkı olabilir.</Text>
+                <TextInput
+                  style={s.input}
+                  placeholder="İlçe ara..."
+                  placeholderTextColor={C.textMuted}
+                  value={districtSearch}
+                  onChangeText={setDistrictSearch}
+                />
+                <ScrollView style={s.districtList} nestedScrollEnabled>
+                  {filteredDistricts.map(d => (
+                    <TouchableOpacity
+                      key={d}
+                      style={[s.districtBtn, selectedDistrict === d && s.districtBtnActive]}
+                      onPress={() => setSelectedDistrict(d)}
+                    >
+                      <Text style={[s.districtLabel, selectedDistrict === d && { color: C.water }]}>{d}</Text>
+                      {selectedDistrict === d && <Check size={16} color={C.water} strokeWidth={3} />}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            ) : (
+              <>
+                <Text style={s.stepDesc}>Doğru fatura hesabı için lütfen ilçeni yaz.</Text>
+                <TextInput
+                  style={s.input}
+                  placeholder="İlçe adı (örn: Osmangazi, Yenişehir)"
+                  placeholderTextColor={C.textMuted}
+                  value={selectedDistrict}
+                  onChangeText={setSelectedDistrict}
+                  maxLength={40}
+                />
+              </>
+            )}
+            <TouchableOpacity
+              style={[s.primaryBtn, (!selectedDistrict || selectedDistrict.trim() === '') && s.btnDisabled, { marginTop: 12 }]}
+              disabled={!selectedDistrict || selectedDistrict.trim() === ''}
+              onPress={() => setStep(4)}
+            >
+              <Text style={s.primaryBtnText}>Devam →</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ADIM 4 — Mahalle ve Sokak */}
+        {step === 4 && (
+          <View style={s.card}>
+            <Text style={s.stepTitle}>Mahalle ve Sokak? 🏠</Text>
+            <Text style={s.stepDesc}>Tüketim analizi ve fatura adresi doğrulaması için girin.</Text>
             <TextInput
               style={s.input}
-              placeholder="İlçe ara..."
+              placeholder="Mahalle, sokak, apartman adı..."
               placeholderTextColor={C.textMuted}
-              value={districtSearch}
-              onChangeText={setDistrictSearch}
+              value={address}
+              onChangeText={setAddress}
+              maxLength={100}
             />
-            <ScrollView style={s.districtList} nestedScrollEnabled>
-              {filteredDistricts.map(d => (
-                <TouchableOpacity
-                  key={d}
-                  style={[s.districtBtn, selectedDistrict === d && s.districtBtnActive]}
-                  onPress={() => setSelectedDistrict(d)}
-                >
-                  <Text style={[s.districtLabel, selectedDistrict === d && { color: C.water }]}>{d}</Text>
-                  {selectedDistrict === d && <Text style={s.checkmark}>✓</Text>}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
             <TouchableOpacity
-              style={[s.primaryBtn, !selectedDistrict && s.btnDisabled, { marginTop: 12 }]}
-              disabled={!selectedDistrict}
+              style={[s.primaryBtn, (!address || address.trim() === '') && s.btnDisabled]}
+              disabled={!address || address.trim() === ''}
               onPress={handleFinish}
             >
               <Text style={s.primaryBtnText}>Başla 🚀</Text>
@@ -131,15 +192,29 @@ export default function SetupScreen() {
         )}
 
         {/* Tarife Önizleme */}
-        {selectedCity && step >= 2 && (
-          <View style={s.tariffPreview}>
-            <Text style={s.tariffTitle}>📋 {selectedCity} Tarifesi (2026)</Text>
-            <Text style={s.tariffRow}>💧 Su Kademe 1: 0–15 m³ → 32,40 ₺/m³</Text>
-            <Text style={s.tariffRow}>💧 Su Kademe 2: 15+ m³ → 49,50 ₺/m³</Text>
-            <Text style={s.tariffRow}>🔥 Gaz: m³ × 10,64 kWh × 1,15 ₺/kWh</Text>
-            <Text style={s.tariffRow}>🧾 ÇTV (1,50 ₺/m³) + KDV %10 dahil</Text>
-          </View>
-        )}
+        {selectedCity && step >= 2 && (() => {
+          const config = getCityConfig(selectedCity);
+          return (
+            <View style={s.tariffPreview}>
+              <Text style={s.tariffTitle}>📋 {selectedCity} Tarifesi (2026)</Text>
+              {config.waterTiers.map((tier, idx) => {
+                const prevLimit = idx === 0 ? 0 : config.waterTiers[idx - 1].limit;
+                const limitStr = tier.limit === 999 ? `${prevLimit}+` : `${prevLimit}–${tier.limit}`;
+                return (
+                  <Text key={idx} style={s.tariffRow}>
+                    💧 Su Kademe {idx + 1}: {limitStr} m³ → {tier.rate.toFixed(2)} ₺/m³
+                  </Text>
+                );
+              })}
+              <Text style={s.tariffRow}>
+                🔥 Gaz Birim Fiyatı: {config.gasRate.toFixed(3)} ₺/m³
+              </Text>
+              <Text style={s.tariffRow}>
+                🧾 Sabit Abonelik: {config.taxes.abonelikUcreti.toFixed(2)} ₺ · KDV %{(config.taxes.kdv * 100).toFixed(0)} dahil
+              </Text>
+            </View>
+          );
+        })()}
       </ScrollView>
     </View>
   );
@@ -149,8 +224,8 @@ const s = StyleSheet.create({
   root:          { flex: 1, backgroundColor: C.bg },
   scroll:        { padding: 24, paddingTop: 60, paddingBottom: 60 },
   logoArea:      { alignItems: 'center', marginBottom: 32 },
-  logo:          { fontSize: 52 },
-  appName:       { fontSize: 36, fontWeight: '900', color: C.text, marginTop: 8 },
+  logoBadge:     { width: 72, height: 72, borderRadius: RADIUS.xl, backgroundColor: C.brandDim, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: `${C.brand}30` },
+  appName:       { fontSize: 36, fontWeight: '900', color: C.text, marginTop: 12 },
   tagline:       { fontSize: FONT.sm, color: C.textDim, marginTop: 4 },
   steps:         { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 28 },
   stepDot:       { width: 32, height: 32, borderRadius: RADIUS.full, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
@@ -165,6 +240,9 @@ const s = StyleSheet.create({
   cityBtn:       { paddingHorizontal: 18, paddingVertical: 12, borderRadius: RADIUS.md, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border },
   cityBtnActive: { borderColor: C.water, backgroundColor: C.waterDim },
   cityLabel:     { color: C.textDim, fontWeight: '600', fontSize: FONT.md },
+  cityList:      { maxHeight: 220, marginBottom: 12 },
+  cityRowBtn:    { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: C.divider },
+  cityRowLabel:  { color: C.text, fontSize: FONT.md },
   districtList:  { maxHeight: 220, marginBottom: 4 },
   districtBtn:   { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: C.divider },
   districtBtnActive: {},
