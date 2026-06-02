@@ -36,6 +36,7 @@ export interface Property {
   type:          'home' | 'office' | 'rental' | 'other';
   isPrepaid?:    boolean;   // kartlı sayaç modu
   prepaidCredit?: number;  // yüklenen kredi (TL)
+  regionStatus?: 'center' | 'town' | 'rural'; // bölge statüsü (merkez, belde, kırsal)
 }
 
 export interface UserProfile {
@@ -152,9 +153,14 @@ export function getBillBreakdown(
   type:        UtilityType,
   consumption: number,
   city:        string,
+  regionStatus?: 'center' | 'town' | 'rural',
 ): BillBreakdown {
   const config = getCityConfig(city);
   const { kdv, ctv, abonelikUcreti } = config.taxes;
+
+  let discountFactor = 1.0;
+  if (regionStatus === 'town') discountFactor = 0.50;
+  else if (regionStatus === 'rural') discountFactor = 0.25;
 
   if (type === 'water') {
     let remaining = consumption;
@@ -164,7 +170,7 @@ export function getBillBreakdown(
     for (const tier of config.waterTiers) {
       if (remaining <= 0) break;
       const tierVolume = Math.min(remaining, tier.limit - prevLimit);
-      rawTariff += tierVolume * tier.rate;
+      rawTariff += tierVolume * (tier.rate * discountFactor);
       remaining -= tierVolume;
       prevLimit = tier.limit;
     }
@@ -172,7 +178,7 @@ export function getBillBreakdown(
     rawTariff = r2(rawTariff);
     const ctvCost = r2(rawTariff * ctv);
     const kdvCost = r2(rawTariff * kdv);
-    const totalCost = r2(rawTariff * (1 + kdv + ctv) + abonelikUcreti);
+    const totalCost = r2(rawTariff * (1 + kdv + ctv) + (abonelikUcreti * discountFactor));
 
     return {
       consumption,
@@ -200,7 +206,7 @@ export function getBillBreakdown(
     rawTariff = r2(rawTariff);
     const ctvCost = r2(rawTariff * ctv);
     const kdvCost = r2(rawTariff * kdv);
-    const totalCost = r2(rawTariff * (1 + kdv + ctv) + abonelikUcreti);
+    const totalCost = r2(rawTariff * (1 + kdv + ctv) + abonelikUcreti); // Gas fixed charge usually does not have regional town discounts
     const energyKwh = r2(consumption * 10.64);
 
     return {
@@ -253,7 +259,7 @@ export const useUtilityStore = create<UtilityState>()(
 
       completeSetup: (city, district, name, address) => {
         const id   = `prop_${Date.now()}`;
-        const prop: Property = { id, name: 'Ana Mülk', city, district, address, type: 'home' };
+        const prop: Property = { id, name: 'Ana Mülk', city, district, address, type: 'home', regionStatus: 'center' };
         set(s => ({
           profile:          { ...s.profile, city, district, name: name ?? s.profile.name, setupComplete: true },
           properties:       [prop],

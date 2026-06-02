@@ -128,7 +128,11 @@ export function getDistricts(city: string): string[] {
 /**
  * Kademeli su tarifesine göre toplam maliyet hesapla (vergi dahil)
  */
-export function calculateWaterCost(city: string, consumption: number): number {
+export function calculateWaterCost(
+  city: string,
+  consumption: number,
+  regionStatus?: 'center' | 'town' | 'rural'
+): number {
   const config = getCityConfig(city);
   if (!config) return 0;
 
@@ -136,17 +140,21 @@ export function calculateWaterCost(city: string, consumption: number): number {
   let cost = 0;
   let prevLimit = 0;
 
+  let discountFactor = 1.0;
+  if (regionStatus === 'town') discountFactor = 0.50;
+  else if (regionStatus === 'rural') discountFactor = 0.25;
+
   for (const tier of config.waterTiers) {
     if (remaining <= 0) break;
     const tierVolume = Math.min(remaining, tier.limit - prevLimit);
-    cost += tierVolume * tier.rate;
+    cost += tierVolume * (tier.rate * discountFactor);
     remaining -= tierVolume;
     prevLimit = tier.limit;
   }
 
   // Vergi uygula
   const { kdv, ctv, abonelikUcreti } = config.taxes;
-  cost = cost * (1 + kdv + ctv) + abonelikUcreti;
+  cost = cost * (1 + kdv + ctv) + (abonelikUcreti * discountFactor);
   return Math.round(cost * 100) / 100;
 }
 
@@ -185,11 +193,12 @@ export function calculateFromIndex(
   city: string,
   type: 'water' | 'gas',
   prevIndex: number,
-  currentIndex: number
+  currentIndex: number,
+  regionStatus?: 'center' | 'town' | 'rural'
 ): { consumption: number; cost: number } {
   const consumption = Math.max(0, currentIndex - prevIndex);
   const cost = type === 'water'
-    ? calculateWaterCost(city, consumption)
+    ? calculateWaterCost(city, consumption, regionStatus)
     : calculateGasCost(city, consumption);
   return { consumption, cost };
 }

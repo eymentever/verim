@@ -46,7 +46,9 @@ export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
 
   const { profile, activePropertyId } = store;
-  const city = store.activeProperty()?.city ?? profile.city ?? 'İstanbul';
+  const activeProp = store.activeProperty();
+  const city = activeProp?.city ?? profile.city ?? 'İstanbul';
+  const regionStatus = activeProp?.regionStatus ?? 'center';
 
   const [meterType, setMeterType] = useState<MeterType>('water');
   const [scanning,  setScanning]  = useState(false);
@@ -178,7 +180,7 @@ export default function ScanScreen() {
         ? (computeConsumption(result.indexValue, lastIndex) ?? 0)
         : result.indexValue;
 
-      const bd = getBillBreakdown(meterType, netConsumption, city);
+      const bd = getBillBreakdown(meterType, netConsumption, city, regionStatus);
 
       setOcrResult(result);
       setBreakdown(bd);

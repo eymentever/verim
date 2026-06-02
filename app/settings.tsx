@@ -84,7 +84,7 @@ export default function SettingsScreen() {
 
   // Edit Property Modal States
   const [modalVisible, setModalVisible] = useState(false);
-  const [editField, setEditField] = useState<'name' | 'city' | 'district' | 'address' | null>(null);
+  const [editField, setEditField] = useState<'name' | 'city' | 'district' | 'address' | 'regionStatus' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [districtSearch, setDistrictSearch] = useState('');
 
@@ -123,6 +123,7 @@ export default function SettingsScreen() {
     }
     if (editField === 'district') updates.district = trimmed;
     if (editField === 'address') updates.address = trimmed || undefined;
+    if (editField === 'regionStatus') updates.regionStatus = trimmed as any;
 
     store.updateProperty(prop.id, updates);
     setModalVisible(false);
@@ -242,6 +243,22 @@ export default function SettingsScreen() {
                 onPress={() => {
                   setEditField('address');
                   setEditValue(prop.address ?? '');
+                  setModalVisible(true);
+                }}
+              />
+              <InfoRow
+                label="Bölge Statüsü"
+                value={
+                  prop.regionStatus === 'town'
+                    ? 'Belde / Çevre (%50 İndirim)'
+                    : prop.regionStatus === 'rural'
+                    ? 'Kırsal / Köy (%75 İndirim)'
+                    : 'Merkez / Standart'
+                }
+                Icon={MapPin}
+                onPress={() => {
+                  setEditField('regionStatus');
+                  setEditValue(prop.regionStatus ?? 'center');
                   setModalVisible(true);
                 }}
               />
@@ -427,6 +444,7 @@ export default function SettingsScreen() {
               {editField === 'city' && 'Şehir Seçin'}
               {editField === 'district' && 'İlçe Seçin'}
               {editField === 'address' && 'Adres / Sokak Düzenle'}
+              {editField === 'regionStatus' && 'Bölge Statüsü Seçin'}
             </Text>
 
             {editField === 'name' && (
@@ -462,6 +480,25 @@ export default function SettingsScreen() {
                   >
                     <Text style={[s.modalRowText, editValue === c && { color: C.water, fontWeight: '700' }]}>{c}</Text>
                     {editValue === c && <Check size={16} color={C.water} strokeWidth={3} />}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {editField === 'regionStatus' && (
+              <View style={{ gap: 10, marginVertical: 12 }}>
+                {[
+                  { value: 'center', label: 'Merkez / Standart' },
+                  { value: 'town', label: 'Belde / Çevre (%50 İndirim)' },
+                  { value: 'rural', label: 'Kırsal / Köy (%75 İndirim)' },
+                ].map(item => (
+                  <TouchableOpacity
+                    key={item.value}
+                    style={[s.modalRowBtn, editValue === item.value && s.modalRowBtnActive]}
+                    onPress={() => handleSaveField(item.value)}
+                  >
+                    <Text style={[s.modalRowText, editValue === item.value && { color: C.water, fontWeight: '700' }]}>{item.label}</Text>
+                    {editValue === item.value && <Check size={16} color={C.water} strokeWidth={3} />}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -517,7 +554,7 @@ export default function SettingsScreen() {
               </View>
             )}
 
-            {(editField === 'city' || editField === 'district') && (
+            {(editField === 'city' || editField === 'district' || editField === 'regionStatus') && (
               <TouchableOpacity
                 style={[s.modalCloseBtn, { marginTop: 12 }]}
                 onPress={() => {
