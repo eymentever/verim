@@ -45,99 +45,9 @@ export interface UserProfile {
   setupComplete: boolean;
 }
 
-// ── Tarife Sabitleri ──────────────────────────────────────────────────────────
-
-/**
- * SU — İSKİ 2026 İstanbul MVP kademeli tarife
- *
- * Tier 1 : 0–15 m³   →  32.40 ₺/m³
- * Tier 2 : 15+ m³    →  49.50 ₺/m³
- * ÇTV    : 1.50 ₺/m³  (tüm tüketim)
- * KDV    : %10        (ham tarife + ÇTV toplamına)
- */
-const WATER = {
-  tier1Limit: 15,
-  tier1Rate:  32.40,
-  tier2Rate:  49.50,
-  ctv:         1.50,
-  kdv:         0.10,
-} as const;
-
-/**
- * GAZ — Türkiye Doğalgaz EPDK 2026
- *
- * Kalori dönüşümü : m³ × 10.64 = kWh  (Türkiye standardı)
- * Birim fiyat     : 1.15 ₺/kWh
- * KDV             : %10
- */
-const GAS = {
-  calorificValue: 10.64,
-  ratePerKwh:      1.15,
-  kdv:             0.10,
-} as const;
-
-// ── Tarife Motorları ──────────────────────────────────────────────────────────
-
-/**
- * Su faturası hesapla (vergiler dahil).
- *
- * Adım 1 — Kademeli tarife:
- *   tier1 = min(consumption, 15) × 32.40
- *   tier2 = max(0, consumption − 15) × 49.50
- *   ham   = tier1 + tier2
- *
- * Adım 2 — ÇTV:
- *   ctv = consumption × 1.50
- *
- * Adım 3 — KDV:
- *   kdv = (ham + ctv) × 0.10
- *
- * Adım 4 — Toplam:
- *   total = ham + ctv + kdv
- *
- * @param consumption - Net m³ tüketim (yeni endeks − önceki endeks)
- */
-export function calculateWaterBill(consumption: number): number {
-  if (consumption <= 0) return 0;
-
-  const tier1   = Math.min(consumption, WATER.tier1Limit) * WATER.tier1Rate;
-  const tier2   = Math.max(0, consumption - WATER.tier1Limit) * WATER.tier2Rate;
-  const ham     = tier1 + tier2;
-  const ctv     = consumption * WATER.ctv;
-  const kdv     = (ham + ctv) * WATER.kdv;
-
-  return r2(ham + ctv + kdv);
-}
-
-/**
- * Gaz faturası hesapla (vergiler dahil).
- *
- * Adım 1 — Hacim → Enerji:
- *   kWh = consumption × 10.64
- *
- * Adım 2 — Maliyet:
- *   ham = kWh × 1.15
- *
- * Adım 3 — KDV:
- *   kdv = ham × 0.10
- *
- * Adım 4 — Toplam:
- *   total = ham + kdv
- *
- * @param consumption - Net m³ tüketim
- */
-export function calculateGasBill(consumption: number): number {
-  if (consumption <= 0) return 0;
-
-  const energyKwh = consumption * GAS.calorificValue;
-  const ham       = energyKwh * GAS.ratePerKwh;
-  const kdv       = ham * GAS.kdv;
-
-  return r2(ham + kdv);
-}
-
 /**
  * Doğrulama modalı için vergi dökümü döner.
+ * Tüm tarife hesaplamaları tariffEngine.ts üzerinden yapılır (şehir/ilçe bazlı).
  */
 export interface BillBreakdown {
   consumption: number;   // m³
@@ -174,7 +84,9 @@ export function getBillBreakdown(
 
     rawTariff = r2(rawTariff);
     const kdvCost = r2(rawTariff * 0.04);
-    const ctvCost = r2(consumption * 4.00);
+    // ÇTV: büyükşehir merkezleri 4.00 ₺/m³, çevre ilçeler (discountFactor < 1) maktu 2.00 ₺/m³
+    const ctvRate = discountFactor < 1 ? 2.00 : 4.00;
+    const ctvCost = r2(consumption * ctvRate);
     const subCost = r2((config.taxes.abonelikUcreti * discountFactor) * 1.10);
     const totalCost = r2(rawTariff + kdvCost + ctvCost + subCost);
 
@@ -351,3 +263,4 @@ export const useUtilityStore = create<UtilityState>()(
 function r2(n: number): number {
   return Math.round(n * 100) / 100;
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
