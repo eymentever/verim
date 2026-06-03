@@ -311,7 +311,10 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={isPrepaid}
-              onValueChange={setIsPrepaid}
+              onValueChange={(val) => {
+                setIsPrepaid(val);
+                if (prop) store.updateProperty(prop.id, { isPrepaid: val });
+              }}
               trackColor={{ false: C.border, true: C.water }}
               thumbColor="#fff"
             />
@@ -324,6 +327,10 @@ export default function SettingsScreen() {
                 style={s.input}
                 value={creditStr}
                 onChangeText={setCreditStr}
+                onBlur={() => {
+                  const credit = parseFloat(creditStr) || 0;
+                  if (prop) store.updateProperty(prop.id, { prepaidCredit: credit });
+                }}
                 keyboardType="numeric"
                 placeholderTextColor={C.textMuted}
               />

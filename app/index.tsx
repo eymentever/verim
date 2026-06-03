@@ -387,7 +387,7 @@ export default function Dashboard() {
         <View style={s.fabRow}>
           <TouchableOpacity
             style={[s.fab, { borderColor: `${C.water}40` }, SHADOW.water]}
-            onPress={() => canScanWater ? router.push('/scan') : router.push('/paywall')}
+            onPress={() => canScanWater ? router.push('/scan?type=water') : router.push('/paywall')}
             activeOpacity={0.8}
           >
             <ExpoLinearGradient
@@ -403,7 +403,7 @@ export default function Dashboard() {
 
           <TouchableOpacity
             style={[s.fab, { borderColor: `${C.gas}40` }, SHADOW.gas]}
-            onPress={() => canScanGas ? router.push('/scan') : router.push('/paywall')}
+            onPress={() => canScanGas ? router.push('/scan?type=gas') : router.push('/paywall')}
             activeOpacity={0.8}
           >
             <ExpoLinearGradient

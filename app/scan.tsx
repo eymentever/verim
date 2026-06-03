@@ -5,7 +5,7 @@ import {
   Vibration, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { C, FONT, RADIUS } from '../src/theme';
 import {
   useUtilityStore,
@@ -119,7 +119,10 @@ export default function ScanScreen() {
   const district   = activeProp?.district ?? store.profile.district ?? '';
 
   // ── UI state ──────────────────────────────────────────────────────────────
-  const [meterType,    setMeterType]    = useState<MeterType>('water');
+  const params = useLocalSearchParams<{ type?: string }>();
+  const [meterType,    setMeterType]    = useState<MeterType>(
+    params.type === 'gas' ? 'gas' : 'water'
+  );
   const [mode,         setMode]         = useState<ScanMode>('manual');
   const [phase,        setPhase]        = useState<ScanPhase>('idle');
   const [torchOn,      setTorchOn]      = useState(false);

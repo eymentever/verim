@@ -184,7 +184,7 @@ export default function AnalyticsScreen() {
   const gasRate      = cityConfig.gasRate;
   const waterRate    = cityConfig.waterTiers[0]?.rate ?? 44.50;
   const gasIntel     = useMemo(() => getGasIntelligence(activeLogs, gasRate, undefined, undefined, city),   [activeLogs, gasRate, city]);
-  const waterIntel   = useMemo(() => getWaterIntelligence(activeLogs, waterRate, undefined, undefined, undefined, city), [activeLogs, waterRate, city]);
+  const waterIntel   = useMemo(() => getWaterIntelligence(activeLogs, waterRate, undefined, undefined, store.profile.householdSize, city), [activeLogs, waterRate, store.profile.householdSize, city]);
 
   const totalCost  = activeLogs.reduce((s, l) => s + l.cost, 0);
   const totalWater = activeLogs.filter(l => l.type === 'water').reduce((s, l) => s + l.consumption, 0);
