@@ -120,7 +120,7 @@ export default function ScanScreen() {
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [meterType,    setMeterType]    = useState<MeterType>('water');
-  const [mode,         setMode]         = useState<ScanMode>('auto');
+  const [mode,         setMode]         = useState<ScanMode>('manual');
   const [phase,        setPhase]        = useState<ScanPhase>('idle');
   const [torchOn,      setTorchOn]      = useState(false);
   const [manualInput,  setManualInput]  = useState('');
@@ -408,7 +408,7 @@ export default function ScanScreen() {
             disabled={phase === 'scanning' || phase === 'processing'}
           >
             <Text style={[s.modeBtnText, mode === m && { color }]}>
-              {m === 'auto' ? '🤖  Otomatik' : '✏️  Manuel Giriş'}
+              {m === 'manual' ? '✏️  Manuel Giriş' : '🤖  Oto Tara (Beta)'}
             </Text>
           </TouchableOpacity>
         ))}
