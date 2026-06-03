@@ -13,6 +13,8 @@ import { usePrepaidMeter } from '../src/hooks/usePrepaidMeter';
 import { getDistricts, getCityConfig } from '../src/services/tariffEngine';
 import { auditWaterBill } from '../src/services/waterIntelligenceService';
 import { auditBill as auditGasBill } from '../src/services/gasIntelligenceService';
+import { scheduleMonthlyReminder, cancelMonthlyReminder } from '../src/services/notificationService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── Tier renk haritası ────────────────────────────────────────────────────────
 
@@ -83,6 +85,17 @@ export default function SettingsScreen() {
 
   // Devir PDF
   const [genPDF, setGenPDF] = useState(false);
+
+  // Bildirim hatırlatıcısı
+  const [reminderEnabled, setReminderEnabled] = React.useState(false);
+  React.useEffect(() => {
+    AsyncStorage.getItem('verim_monthly_reminder_enabled').then(v => setReminderEnabled(v === 'true'));
+  }, []);
+  const toggleReminder = async (val: boolean) => {
+    setReminderEnabled(val);
+    await AsyncStorage.setItem('verim_monthly_reminder_enabled', String(val));
+    if (val) { await scheduleMonthlyReminder(1); } else { await cancelMonthlyReminder(); }
+  };
 
   // Bütçe & Hane
   const [budgetStr,      setBudgetStr]      = useState(String(store.profile.monthlyBudget || ''));
@@ -522,6 +535,23 @@ export default function SettingsScreen() {
           {!prop && (
             <Text style={s.auditEmpty}>Fatura karşılaştırması için önce bir mülk ekleyin.</Text>
           )}
+        </View>
+
+        {/* ── Bildirimler ───────────────────────────── */}
+        <SectionTitle title="Bildirimler" />
+        <View style={s.card}>
+          <View style={st.infoRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={st.infoLabel}>Aylık Okuma Hatırlatıcısı</Text>
+              <Text style={[st.infoLabel, { fontSize: FONT.xs, marginTop: 2 }]}>Her ayın 1'inde bildirim gönderir</Text>
+            </View>
+            <Switch
+              value={reminderEnabled}
+              onValueChange={toggleReminder}
+              trackColor={{ false: C.border, true: C.brand }}
+              thumbColor={reminderEnabled ? C.bg : C.textDim}
+            />
+          </View>
         </View>
 
         {/* ── Veri & Gizlilik ────────────────────────── */}

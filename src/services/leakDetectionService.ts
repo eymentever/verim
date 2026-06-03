@@ -18,20 +18,23 @@ interface MonthStats {
 }
 
 function groupByMonth(logs: ConsumptionLog[], type: 'water' | 'gas'): MonthStats[] {
-  const map = new Map<string, number[]>();
+  const map = new Map<string, { vals: number[]; dateKey: string }>();
   logs
     .filter((l) => l.type === type)
     .forEach((l) => {
       const d = new Date(l.date);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(l.consumption);
+      const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}`;
+      if (!map.has(key)) map.set(key, { vals: [], dateKey: key });
+      map.get(key)!.vals.push(l.consumption);
     });
 
-  return Array.from(map.values()).map((vals) => {
-    const total = vals.reduce((s, v) => s + v, 0);
-    return { total, count: vals.length, avg: total / vals.length };
-  });
+  // Tarihe göre artan sırada sırala — son eleman en güncel ay olsun
+  return Array.from(map.values())
+    .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+    .map(({ vals }) => {
+      const total = vals.reduce((s, v) => s + v, 0);
+      return { total, count: vals.length, avg: total / vals.length };
+    });
 }
 
 export function analyzeConsumption(logs: ConsumptionLog[]): AnomalyReport {

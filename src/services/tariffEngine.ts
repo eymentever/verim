@@ -401,8 +401,9 @@ export function calculateWaterCost(
   // Resmi Bakanlık ve Belediye Vergilendirmesi (2026):
   // 1. Su KDV (%1 su + %10 atıksu = Ortalama %4.0 KDV)
   const kdvCost = rawTariff * 0.04;
-  // 2. ÇTV (Büyükşehirlerde m³ başına maktu 4.00 ₺)
-  const ctvCost = consumption * 4.00;
+  // 2. ÇTV: Büyükşehir merkez 4.00 ₺/m³, çevre ilçe (discountFactor<1) 2.00 ₺/m³
+  const ctvRate = discountFactor < 1 ? 2.00 : 4.00;
+  const ctvCost = consumption * ctvRate;
   // 3. Sabit Bakım/Abonelik Ücreti (%10 KDV dahil)
   const subCost = (config.taxes.abonelikUcreti * discountFactor) * 1.10;
 

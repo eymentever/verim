@@ -195,7 +195,7 @@ export default function ScanScreen() {
   useEffect(() => () => { reset(); }, []);
 
   // ── Ortak: sonucu işle ve modal aç ────────────────────────────────────────
-  async function processResult(rawIndex: number) {
+  async function processResult(rawIndex: number): Promise<boolean> {
     const propId    = store.activePropertyId ?? 'default';
     const lastIndex = store.lastIndexForType(propId, meterType);
     const daysSince = (() => {
@@ -212,7 +212,7 @@ export default function ScanScreen() {
       ]);
       running.current = false;
       setPhase('idle');
-      return;
+      return false;
     }
 
     if (validation.severity === 'warning') {
@@ -228,7 +228,7 @@ export default function ScanScreen() {
           { cancelable: false }
         )
       );
-      if (!confirmed) { reset(); return; }
+      if (!confirmed) { reset(); return false; }
     }
 
     const isFirst        = lastIndex === undefined;
@@ -240,6 +240,7 @@ export default function ScanScreen() {
     setConsumption(netConsumption);
     setIsBaseline(isFirst);
     setBreakdown(bd);
+    return true;
   }
 
   // ── Otomatik Tarama ───────────────────────────────────────────────────────
@@ -273,8 +274,8 @@ export default function ScanScreen() {
           // ML Kit gelince: simulateOCR → gerçek frame processor ile değiştirilir
           const result = await simulateOCR(`frame://${meterType}`, meterType);
           setOcrResult(result);
-          await processResult(result.indexValue);
-          setModalVisible(true);
+          const ok = await processResult(result.indexValue);
+          if (ok) setModalVisible(true);
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'Lütfen tekrar deneyin.';
           Alert.alert('Okuma Başarısız', msg, [{ text: 'Tekrar Dene', onPress: reset }]);
@@ -311,8 +312,8 @@ export default function ScanScreen() {
       parsedText: String(Math.floor(val)),
     };
     setOcrResult(mockResult);
-    await processResult(mockResult.indexValue);
-    setModalVisible(true);
+    const ok = await processResult(mockResult.indexValue);
+    if (ok) setModalVisible(true);
   }, [manualInput, meterType, city, district]);
 
   // ── Kaydet ────────────────────────────────────────────────────────────────
