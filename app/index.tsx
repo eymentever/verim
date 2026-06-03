@@ -82,7 +82,7 @@ const rg = StyleSheet.create({
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MONTHLY_BUDGET = 2000; // TL — ileride kullanıcı tanımlı olacak
+const DEFAULT_BUDGET = 2000; // Kullanıcı bütçe girmemişse gösterilen varsayılan
 const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
 export default function Dashboard() {
@@ -162,7 +162,8 @@ export default function Dashboard() {
     }
   }, [anomaly.level]);
 
-  const totalRatio = MONTHLY_BUDGET > 0 ? stats.total / MONTHLY_BUDGET : 0;
+  const monthlyBudget = profile.monthlyBudget > 0 ? profile.monthlyBudget : DEFAULT_BUDGET;
+  const totalRatio = stats.total / monthlyBudget;
   const barColor   = totalRatio > 1 ? C.danger : totalRatio > 0.8 ? C.warn : C.brand;
 
   const canScanWater = subStore.canScan('water');
@@ -208,21 +209,21 @@ export default function Dashboard() {
           </View>
           <View style={s.budgetMeta}>
             <Text style={s.budgetMetaText}>Bu ay: ₺{stats.total.toFixed(2)}</Text>
-            <Text style={s.budgetMetaText}>Bütçe: ₺{MONTHLY_BUDGET}</Text>
+            <Text style={s.budgetMetaText}>Bütçe: ₺{monthlyBudget}</Text>
           </View>
         </View>
 
         {/* ── Dairesel Göstergeler ───────────────────── */}
         <View style={s.gaugeRow}>
           <RingGauge
-            ratio={MONTHLY_BUDGET > 0 ? stats.waterCost / (MONTHLY_BUDGET * 0.5) : 0}
+            ratio={monthlyBudget > 0 ? stats.waterCost / (monthlyBudget * 0.5) : 0}
             color={C.water} dimColor={C.waterDim}
             label="Su" IconComponent={Droplet}
             amount={`₺${stats.waterCost.toFixed(0)}`}
             unit={`${stats.waterM3.toFixed(1)} m³`}
           />
           <RingGauge
-            ratio={MONTHLY_BUDGET > 0 ? stats.gasCost / (MONTHLY_BUDGET * 0.5) : 0}
+            ratio={monthlyBudget > 0 ? stats.gasCost / (monthlyBudget * 0.5) : 0}
             color={C.gas} dimColor={C.gasDim}
             label="Gaz" IconComponent={Flame}
             amount={`₺${stats.gasCost.toFixed(0)}`}

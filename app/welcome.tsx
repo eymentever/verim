@@ -78,7 +78,7 @@ export default function WelcomeScreen() {
         {/* Güven notu */}
         <View style={s.trustBox}>
           <Text style={s.trustText}>
-            🔒 Tüm veriler yalnızca cihazınızda şifreli saklanır.{'\n'}
+            🔒 Tüm veriler yalnızca cihazınızda saklanır (iOS/Android sandbox).{'\n'}
             Sunucuya gönderilmez, reklam yok, abonelik zorunlu değil.
           </Text>
         </View>

@@ -209,7 +209,7 @@ export default function SetupScreen() {
 
             <View style={s.privacyNote}>
               <Text style={s.privacyText}>
-                🔒 Verileriniz yalnızca cihazınızda şifreli saklanır. Sunucuya gönderilmez, üçüncü taraflarla paylaşılmaz.
+                🔒 Verileriniz yalnızca cihazınızda cihazınızda saklanır. Sunucuya gönderilmez, üçüncü taraflarla paylaşılmaz.
               </Text>
             </View>
             </>

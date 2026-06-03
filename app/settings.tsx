@@ -84,6 +84,17 @@ export default function SettingsScreen() {
   // Devir PDF
   const [genPDF, setGenPDF] = useState(false);
 
+  // Bütçe & Hane
+  const [budgetStr,      setBudgetStr]      = useState(String(store.profile.monthlyBudget || ''));
+  const [householdStr,   setHouseholdStr]   = useState(String(store.profile.householdSize || 3));
+
+  const handleSaveBudget = () => {
+    const budget    = parseFloat(budgetStr) || 0;
+    const household = Math.max(1, Math.min(10, parseInt(householdStr) || 3));
+    store.setProfile({ monthlyBudget: budget, householdSize: household });
+    Alert.alert('✓ Kaydedildi', 'Bütçe ve hane bilgisi güncellendi.');
+  };
+
   // Fatura Karşılaştır
   const [waterBillInput, setWaterBillInput] = useState('');
   const [gasBillInput,   setGasBillInput]   = useState('');
@@ -202,7 +213,29 @@ export default function SettingsScreen() {
             placeholderTextColor={C.textMuted}
             maxLength={40}
           />
-          <TouchableOpacity style={[s.saveBtn, { backgroundColor: C.water }]} onPress={handleSaveName}>
+          <Text style={[s.fieldLabel, { marginTop: 8 }]}>Aylık Fatura Bütçesi (₺)</Text>
+          <TextInput
+            style={s.input}
+            value={budgetStr}
+            onChangeText={setBudgetStr}
+            placeholder="Örn: 1500"
+            placeholderTextColor={C.textMuted}
+            keyboardType="numeric"
+          />
+          <Text style={[s.fieldLabel, { marginTop: 4 }]}>Hane Büyüklüğü (kişi)</Text>
+          <TextInput
+            style={s.input}
+            value={householdStr}
+            onChangeText={setHouseholdStr}
+            placeholder="Örn: 3"
+            placeholderTextColor={C.textMuted}
+            keyboardType="numeric"
+            maxLength={2}
+          />
+          <TouchableOpacity style={[s.saveBtn, { backgroundColor: C.water }]} onPress={() => {
+            store.setProfile({ name: name.trim() });
+            handleSaveBudget();
+          }}>
             <Text style={[s.saveBtnText, { color: C.bg }]}>Kaydet</Text>
           </TouchableOpacity>
         </View>

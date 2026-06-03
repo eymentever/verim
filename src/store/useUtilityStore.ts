@@ -43,6 +43,10 @@ export interface UserProfile {
   city:          string;
   district:      string;
   setupComplete: boolean;
+  /** Kullanıcının aylık fatura bütçesi (₺). Varsayılan: 0 = belirsiz */
+  monthlyBudget: number;
+  /** Hane büyüklüğü — su tasarruf hesabı için */
+  householdSize: number;
 }
 
 /**
@@ -162,7 +166,7 @@ interface UtilityState {
 export const useUtilityStore = create<UtilityState>()(
   persist(
     (set, get) => ({
-      profile:          { name: '', city: 'İstanbul', district: '', setupComplete: false },
+      profile:          { name: '', city: 'İstanbul', district: '', setupComplete: false, monthlyBudget: 0, householdSize: 3 },
       properties:       [],
       activePropertyId: null,
       logs:             [],
