@@ -175,8 +175,14 @@ export default function SetupScreen() {
         {selectedCity && step >= 2 && (() => {
           const config = getCityConfig(selectedCity);
           return (
-            <View style={s.tariffPreview}>
-              <Text style={s.tariffTitle}>📋 {selectedCity} Tarifesi (2026)</Text>
+            <>
+              <View style={s.tariffPreview}>
+              <View style={s.tariffHeader}>
+                <Text style={s.tariffTitle}>📋 {selectedCity} Tarifesi (2026)</Text>
+                <View style={s.sourceBadge}>
+                  <Text style={s.sourceText}>Resmi Tarife</Text>
+                </View>
+              </View>
               {config.waterTiers.map((tier, idx) => {
                 const prevLimit = idx === 0 ? 0 : config.waterTiers[idx - 1].limit;
                 const limitStr = tier.limit === 999 ? `${prevLimit}+` : `${prevLimit}–${tier.limit}`;
@@ -187,12 +193,23 @@ export default function SetupScreen() {
                 );
               })}
               <Text style={s.tariffRow}>
-                🔥 Gaz Birim Fiyatı: {config.gasRate.toFixed(3)} ₺/m³
+                🔥 Gaz: {config.gasRate.toFixed(3)} ₺/m³ (ÖTV + %20 KDV ayrıca)
               </Text>
-              <Text style={s.tariffRow}>
-                🧾 Sabit Giderler: Su abonelik bedeli (%10 KDV) · Gaz servis bedeli (%20 KDV)
+              <Text style={s.tariffSource}>
+                Kaynak: {
+                  selectedCity === 'İstanbul' ? 'İSKİ & İGDAŞ' :
+                  selectedCity === 'Ankara'   ? 'ASKİ & BAŞKENTGAZ' :
+                  selectedCity === 'İzmir'    ? 'İZSU & İZMİRGAZ' : 'SASKİ & AGDAŞ'
+                } · {config.lastUpdated}
               </Text>
             </View>
+
+            <View style={s.privacyNote}>
+              <Text style={s.privacyText}>
+                🔒 Verileriniz yalnızca cihazınızda şifreli saklanır. Sunucuya gönderilmez, üçüncü taraflarla paylaşılmaz.
+              </Text>
+            </View>
+            </>
           );
         })()}
       </ScrollView>
@@ -231,7 +248,13 @@ const s = StyleSheet.create({
   primaryBtn:    { backgroundColor: C.water, borderRadius: RADIUS.lg, paddingVertical: 16, alignItems: 'center' },
   btnDisabled:   { opacity: 0.35 },
   primaryBtnText:{ color: C.bg, fontWeight: '900', fontSize: FONT.base },
-  tariffPreview: { backgroundColor: C.card, borderRadius: RADIUS.md, padding: 16, borderWidth: 1, borderColor: C.cardBorder },
-  tariffTitle:   { color: C.water, fontWeight: '700', fontSize: FONT.sm, marginBottom: 8 },
+  tariffPreview: { backgroundColor: C.card, borderRadius: RADIUS.md, padding: 16, borderWidth: 1, borderColor: C.cardBorder, marginBottom: 10 },
+  tariffHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  tariffTitle:   { color: C.water, fontWeight: '700', fontSize: FONT.sm },
+  sourceBadge:   { backgroundColor: `${C.brand}20`, borderRadius: RADIUS.full, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: `${C.brand}40` },
+  sourceText:    { color: C.brand, fontSize: 9, fontWeight: '800' },
   tariffRow:     { color: C.textDim, fontSize: FONT.sm, marginBottom: 4 },
+  tariffSource:  { color: C.textMuted, fontSize: 10, marginTop: 6, fontStyle: 'italic' },
+  privacyNote:   { backgroundColor: `${C.brand}08`, borderRadius: RADIUS.md, padding: 12, borderWidth: 1, borderColor: `${C.brand}20` },
+  privacyText:   { color: C.textDim, fontSize: FONT.xs, lineHeight: 17 },
 });

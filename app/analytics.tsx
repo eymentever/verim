@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Dimensions, Share, Alert,
+  TouchableOpacity, Dimensions, Share, Alert, Linking,
 } from 'react-native';
 import Svg, {
   Rect, Text as SvgText, Line, G, Circle,
@@ -11,6 +11,9 @@ import { useRouter } from 'expo-router';
 import { C, FONT, RADIUS } from '../src/theme';
 import { useUtilityStore } from '../src/store/useUtilityStore';
 import { calculateBenchmark } from '../src/services/socialBenchmark';
+import { getGasIntelligence } from '../src/services/gasIntelligenceService';
+import { getWaterIntelligence } from '../src/services/waterIntelligenceService';
+import { getCityConfig } from '../src/services/tariffEngine';
 import { Thermometer, Droplet, Wind, Wrench, Home, Leaf, ChevronDown, ChevronUp } from 'lucide-react-native';
 
 const { width: SW } = Dimensions.get('window');
@@ -38,6 +41,39 @@ const TIP_ICONS = {
   leak: { Icon: Droplet, color: C.water, bg: C.waterDim },
   insulation: { Icon: Home, color: C.brand, bg: C.brandDim },
 } as const;
+
+// ── Hızlı Eylem Butonları ────────────────────────────────────────────────────
+
+interface QA { label: string; phone?: string; url?: string; emoji: string; urgent?: boolean; }
+
+function QuickActionButtons({ actions }: { actions: QA[] }) {
+  const call = (phone: string) => Linking.openURL(`tel:${phone.replace(/\s/g, '')}`).catch(() => {});
+  return (
+    <View style={qa.row}>
+      {actions.filter(a => a.phone || a.url).map((a, i) => (
+        <TouchableOpacity
+          key={i}
+          style={[qa.btn, a.urgent && qa.urgentBtn]}
+          onPress={() => a.phone ? call(a.phone) : Linking.openURL(a.url!).catch(() => {})}
+          activeOpacity={0.75}
+        >
+          <Text style={qa.emoji}>{a.emoji}</Text>
+          <Text style={[qa.label, a.urgent && qa.urgentLabel]} numberOfLines={1}>{a.label}</Text>
+          {a.phone && <Text style={[qa.phone, a.urgent && qa.urgentLabel]}>{a.phone}</Text>}
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+const qa = StyleSheet.create({
+  row:         { flexDirection: 'row', gap: 8, marginTop: 14, flexWrap: 'wrap' },
+  btn:         { flex: 1, minWidth: 90, backgroundColor: C.bg, borderRadius: RADIUS.md, borderWidth: 1, borderColor: C.border, padding: 10, alignItems: 'center', gap: 3 },
+  urgentBtn:   { backgroundColor: `${C.danger}15`, borderColor: C.danger },
+  emoji:       { fontSize: 20 },
+  label:       { color: C.text, fontSize: FONT.xs, fontWeight: '700', textAlign: 'center' },
+  urgentLabel: { color: C.danger },
+  phone:       { color: C.textDim, fontSize: 9, fontWeight: '600' },
+});
 
 // ── Eco Score Hesapla ─────────────────────────────────────────────────────────
 
@@ -142,8 +178,13 @@ export default function AnalyticsScreen() {
     return Math.max(...vals, 1);
   }, [monthly, filter]);
 
-  const benchmark = useMemo(() => calculateBenchmark(city, activeLogs), [city, activeLogs]);
-  const ecoScore  = useMemo(() => calcEcoScore(benchmark?.savingsPercent ?? 0, activeLogs.length), [benchmark, activeLogs]);
+  const benchmark    = useMemo(() => calculateBenchmark(city, activeLogs), [city, activeLogs]);
+  const ecoScore     = useMemo(() => calcEcoScore(benchmark?.savingsPercent ?? 0, activeLogs.length), [benchmark, activeLogs]);
+  const cityConfig   = useMemo(() => getCityConfig(city), [city]);
+  const gasRate      = cityConfig.gasRate;
+  const waterRate    = cityConfig.waterTiers[0]?.rate ?? 44.50;
+  const gasIntel     = useMemo(() => getGasIntelligence(activeLogs, gasRate, undefined, undefined, city),   [activeLogs, gasRate, city]);
+  const waterIntel   = useMemo(() => getWaterIntelligence(activeLogs, waterRate, undefined, undefined, undefined, city), [activeLogs, waterRate, city]);
 
   const totalCost  = activeLogs.reduce((s, l) => s + l.cost, 0);
   const totalWater = activeLogs.filter(l => l.type === 'water').reduce((s, l) => s + l.consumption, 0);
@@ -276,6 +317,155 @@ export default function AnalyticsScreen() {
           ))}
         </View>
 
+        {/* ── Gaz Zekası ────────────────────────────── */}
+        {/* Kaçak riski */}
+        <View style={[s.intelCard, {
+          borderColor:
+            gasIntel.leak.level === 'critical' ? C.danger :
+            gasIntel.leak.level === 'high'     ? C.warn   :
+            gasIntel.leak.level === 'elevated' ? `${C.warn}80` : `${C.brand}40`,
+        }]}>
+          <View style={s.intelHeader}>
+            <Text style={s.sectionLabel}>Gaz Kaçak Analizi</Text>
+            <View style={[s.intelBadge, {
+              backgroundColor:
+                gasIntel.leak.level === 'critical' ? `${C.danger}20` :
+                gasIntel.leak.level === 'high'     ? `${C.warn}20`   :
+                gasIntel.leak.level === 'elevated' ? `${C.warn}15`   : `${C.brand}15`,
+            }]}>
+              <Text style={[s.intelBadgeText, {
+                color:
+                  gasIntel.leak.level === 'critical' ? C.danger :
+                  gasIntel.leak.level === 'high'     ? C.warn   :
+                  gasIntel.leak.level === 'elevated' ? C.warn   : C.brand,
+              }]}>
+                {gasIntel.leak.level === 'critical' ? 'KRİTİK' :
+                 gasIntel.leak.level === 'high'     ? 'YÜKSEK' :
+                 gasIntel.leak.level === 'elevated' ? 'ARTMIŞ' : 'NORMAL'}
+              </Text>
+            </View>
+          </View>
+          <Text style={s.intelTitle}>{gasIntel.leak.title}</Text>
+          <Text style={s.intelDesc}>{gasIntel.leak.description}</Text>
+          {gasIntel.leak.estimatedLoss !== undefined && (
+            <Text style={[s.intelLoss, { color: C.danger }]}>
+              Tahmini aylık kayıp: ₺{gasIntel.leak.estimatedLoss.toFixed(2)}
+            </Text>
+          )}
+          {gasIntel.leak.actions.length > 0 && (
+            <View style={s.intelActions}>
+              {gasIntel.leak.actions.map((a, i) => (
+                <View key={i} style={s.intelActionRow}>
+                  <Text style={s.intelActionBullet}>{i + 1}.</Text>
+                  <Text style={s.intelActionText}>{a}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {gasIntel.leak.quickActions && gasIntel.leak.quickActions.length > 0 && (
+            <QuickActionButtons actions={gasIntel.leak.quickActions} />
+          )}
+        </View>
+
+        {/* ── Su Zekası ──────────────────────────────── */}
+        <View style={[s.intelCard, {
+          borderColor:
+            waterIntel.leak.level === 'critical' ? C.danger :
+            waterIntel.leak.level === 'high'     ? C.warn   :
+            waterIntel.leak.level === 'elevated' ? `${C.warn}80` : `${C.water}40`,
+        }]}>
+          <View style={s.intelHeader}>
+            <Text style={s.sectionLabel}>Su Kaçak Analizi</Text>
+            <View style={[s.intelBadge, {
+              backgroundColor:
+                waterIntel.leak.level === 'critical' ? `${C.danger}20` :
+                waterIntel.leak.level === 'high'     ? `${C.warn}20`   :
+                waterIntel.leak.level === 'elevated' ? `${C.warn}15`   : `${C.water}15`,
+            }]}>
+              <Text style={[s.intelBadgeText, {
+                color:
+                  waterIntel.leak.level === 'critical' ? C.danger :
+                  waterIntel.leak.level === 'high'     ? C.warn   :
+                  waterIntel.leak.level === 'elevated' ? C.warn   : C.water,
+              }]}>
+                {waterIntel.leak.level === 'critical' ? 'KRİTİK' :
+                 waterIntel.leak.level === 'high'     ? 'YÜKSEK' :
+                 waterIntel.leak.level === 'elevated' ? 'ARTMIŞ' : 'NORMAL'}
+              </Text>
+            </View>
+          </View>
+          <Text style={s.intelTitle}>{waterIntel.leak.title}</Text>
+          <Text style={s.intelDesc}>{waterIntel.leak.description}</Text>
+          {waterIntel.leak.estimatedLossL !== undefined && (
+            <Text style={[s.intelLoss, { color: C.danger }]}>
+              Tahmini kayıp: ~{waterIntel.leak.estimatedLossL} L/ay
+              {waterIntel.leak.estimatedCostLoss !== undefined
+                ? ` (~₺${waterIntel.leak.estimatedCostLoss})` : ''}
+            </Text>
+          )}
+          {waterIntel.leak.actions.length > 0 && (
+            <View style={s.intelActions}>
+              {waterIntel.leak.actions.map((a, i) => (
+                <View key={i} style={s.intelActionRow}>
+                  <Text style={s.intelActionBullet}>{i + 1}.</Text>
+                  <Text style={s.intelActionText}>{a}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {waterIntel.leak.quickActions && waterIntel.leak.quickActions.length > 0 && (
+            <QuickActionButtons actions={waterIntel.leak.quickActions} />
+          )}
+        </View>
+
+        {/* Su tasarruf önerileri */}
+        {waterIntel.saving.hasAdvice && (
+          <View style={[s.intelCard, { borderColor: `${C.water}40` }]}>
+            <Text style={s.sectionLabel}>Su Tasarruf Önerileri</Text>
+            <Text style={s.intelTitle}>{waterIntel.saving.title}</Text>
+            <Text style={s.intelDesc}>{waterIntel.saving.description}</Text>
+            {waterIntel.saving.estimatedSaving > 0 && (
+              <View style={[s.intelSavingBadge, { backgroundColor: `${C.water}15`, borderColor: `${C.water}30` }]}>
+                <Text style={[s.intelSavingText, { color: C.water }]}>
+                  💰 Aylık ~₺{waterIntel.saving.estimatedSaving} tasarruf potansiyeli
+                </Text>
+              </View>
+            )}
+            <View style={s.intelActions}>
+              {waterIntel.saving.tips.map((tip, i) => (
+                <View key={i} style={s.intelActionRow}>
+                  <Text style={s.intelActionBullet}>•</Text>
+                  <Text style={s.intelActionText}>{tip}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Isıtma optimizasyonu */}
+        {gasIntel.heating.hasAdvice && (
+          <View style={[s.intelCard, { borderColor: `${C.gas}40` }]}>
+            <Text style={s.sectionLabel}>Isıtma Optimizasyonu</Text>
+            <Text style={s.intelTitle}>{gasIntel.heating.title}</Text>
+            <Text style={s.intelDesc}>{gasIntel.heating.description}</Text>
+            {gasIntel.heating.estimatedSaving > 0 && (
+              <View style={s.intelSavingBadge}>
+                <Text style={s.intelSavingText}>
+                  💰 Aylık ~₺{gasIntel.heating.estimatedSaving} tasarruf potansiyeli
+                </Text>
+              </View>
+            )}
+            <View style={s.intelActions}>
+              {gasIntel.heating.tips.map((tip, i) => (
+                <View key={i} style={s.intelActionRow}>
+                  <Text style={s.intelActionBullet}>•</Text>
+                  <Text style={s.intelActionText}>{tip}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* ── Enerji Tavsiyeleri ─────────────────────── */}
         <View style={s.tipsCard}>
           <Text style={s.sectionLabel}>Tasarruf Tavsiyeleri</Text>
@@ -357,54 +547,66 @@ const s = StyleSheet.create({
   root:        { flex: 1, backgroundColor: C.bg },
   scroll:      { padding: 24, paddingBottom: 110 },
   header:      { marginBottom: 20, paddingTop: 48 },
-  title:       { color: C.text, fontSize: FONT['2xl'], fontWeight: '900' },
-  sub:         { color: C.textDim, fontSize: FONT.sm, marginTop: 2 },
+  title:       { color: C.text, fontSize: FONT.xl, fontWeight: '900' },
   sectionLabel:{ color: C.textDim, fontSize: FONT.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
 
-  // Eco
-  ecoCard:     { backgroundColor: C.card, borderRadius: RADIUS.xl, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: C.cardBorder, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  ecoDesc:     { color: C.textDim, fontSize: FONT.sm, lineHeight: 18, marginBottom: 14 },
-  shareBtn:    { backgroundColor: C.brandDim, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start', borderWidth: 1, borderColor: `${C.brand}40` },
-  shareBtnText:{ color: C.brand, fontSize: FONT.sm, fontWeight: '700' },
-
   // Filter
-  filterRow:   { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  filterBtn:   { flex: 1, paddingVertical: 10, borderRadius: RADIUS.md, backgroundColor: C.card, alignItems: 'center', borderWidth: 1, borderColor: C.border },
-  filterLabel: { color: C.textDim, fontSize: FONT.sm, fontWeight: '600' },
+  filterRow:   { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  filterBtn:   { flex: 1, paddingVertical: 9, borderRadius: RADIUS.md, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center' },
+  filterText:  { color: C.textDim, fontSize: FONT.xs, fontWeight: '700' },
+
+  // Stat row
+  statRow:     { flexDirection: 'row', gap: 10, marginBottom: 20 },
 
   // Chart
-  chartCard:   { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: C.cardBorder },
+  chartCard:   { backgroundColor: C.card, borderRadius: RADIUS.xl, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: C.cardBorder },
+  chartInner:  { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 160, paddingHorizontal: 16 },
+  barWrap:     { alignItems: 'center', gap: 4 },
+  barLabel:    { color: C.textDim, fontSize: FONT.xs },
+  chartLegend: { flexDirection: 'row', gap: 16, marginTop: 12 },
+  legendDot:   { width: 8, height: 8, borderRadius: 4, marginTop: 4 },
+  legendText:  { color: C.textDim, fontSize: FONT.xs },
 
-  // Stats
-  statsRow:    { flexDirection: 'row', gap: 8, marginBottom: 14 },
-
-  // Monthly breakdown
-  monthlyCard: { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: C.cardBorder },
-  monthRow:    { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.divider },
-  monthLabel:  { color: C.textDim, fontSize: FONT.sm, width: 36 },
-  monthVals:   { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' },
-  monthVal:    { fontSize: FONT.sm },
-  monthSep:    { color: C.textMuted, fontSize: FONT.xs },
+  // Eco
+  ecoCard:     { backgroundColor: C.card, borderRadius: RADIUS.xl, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: C.cardBorder, alignItems: 'center' },
+  ecoTitle:    { color: C.text, fontSize: FONT.lg, fontWeight: '900', marginBottom: 4, textAlign: 'center' },
+  ecoSub:      { color: C.textDim, fontSize: FONT.sm, textAlign: 'center', marginBottom: 14 },
+  shareBtn:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: `${C.brand}20`, borderWidth: 1, borderColor: `${C.brand}40` },
+  shareBtnText:{ color: C.brand, fontSize: FONT.sm, fontWeight: '700' },
 
   // Tips
-  tipsCard:    { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: C.cardBorder },
-  tipRow:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.divider, gap: 12, borderRadius: RADIUS.sm },
+  tipsCard:    { backgroundColor: C.card, borderRadius: RADIUS.xl, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: C.cardBorder },
+  tipRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.divider, borderRadius: RADIUS.sm, paddingHorizontal: 4 },
   tipIconBadge:{ width: 32, height: 32, borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center' },
   tipText:     { color: C.text, fontSize: FONT.sm, lineHeight: 18, flex: 1 },
-  tipSaving:   { color: C.brand, fontSize: FONT.xs, marginTop: 4, fontWeight: '700' },
-  
+  tipSaving:   { color: C.brand, fontSize: FONT.xs, fontWeight: '700', marginTop: 4 },
+
+  // Intelligence cards (gas + water)
+  intelCard:   { backgroundColor: C.card, borderRadius: RADIUS.xl, padding: 20, marginBottom: 16, borderWidth: 1 },
+  intelHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  intelBadge:  { paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.full },
+  intelBadgeText: { fontSize: FONT.xs, fontWeight: '900', letterSpacing: 0.5 },
+  intelTitle:  { color: C.text, fontSize: FONT.md, fontWeight: '800', marginBottom: 6 },
+  intelDesc:   { color: C.textDim, fontSize: FONT.sm, lineHeight: 18, marginBottom: 8 },
+  intelLoss:   { fontSize: FONT.sm, fontWeight: '700', marginBottom: 8 },
+  intelActions:{ marginTop: 8, gap: 6 },
+  intelActionRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
+  intelActionBullet: { color: C.textDim, fontSize: FONT.xs, fontWeight: '700', width: 16, paddingTop: 1 },
+  intelActionText: { color: C.text, fontSize: FONT.xs, lineHeight: 17, flex: 1 },
+  intelSavingBadge: { borderRadius: RADIUS.sm, padding: 10, borderWidth: 1, marginBottom: 8 },
+  intelSavingText: { fontSize: FONT.sm, fontWeight: '700' },
+
   // Badge
-  badgeCard:   { backgroundColor: C.brandDim, borderRadius: RADIUS.lg, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: `${C.brand}30` },
+  badgeCard:   { backgroundColor: C.card, borderRadius: RADIUS.xl, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: `${C.brand}30` },
+  badgeRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
   badgeIconBadge: { width: 44, height: 44, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
-  badgeRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
-  badgeEmoji:  { fontSize: 32 },
-  badgeTitle:  { color: C.brand, fontWeight: '800', fontSize: FONT.md },
-  badgeSub:    { color: C.textDim, fontSize: FONT.sm, marginTop: 2 },
-  badgeBtn:    { backgroundColor: C.brand, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 8 },
-  badgeBtnText:{ color: C.bg, fontWeight: '900', fontSize: FONT.sm },
-  badgeMsg:    { color: C.text, fontSize: FONT.sm, lineHeight: 18 },
+  badgeTitle:  { color: C.text, fontSize: FONT.md, fontWeight: '800' },
+  badgeSub:    { color: C.textDim, fontSize: FONT.xs, marginTop: 2 },
+  badgeBtn:    { paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.md, backgroundColor: `${C.brand}20`, borderWidth: 1, borderColor: `${C.brand}40` },
+  badgeBtnText:{ color: C.brand, fontSize: FONT.xs, fontWeight: '800' },
+  badgeMsg:    { color: C.textDim, fontSize: FONT.sm, lineHeight: 18 },
 
   // CTA
-  cta:         { backgroundColor: C.brandDim, borderRadius: RADIUS.lg, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: `${C.brand}40` },
-  ctaText:     { color: C.brand, fontWeight: '800', fontSize: FONT.md },
+  cta:         { backgroundColor: `${C.brand}12`, borderRadius: RADIUS.lg, padding: 16, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: `${C.brand}25` },
+  ctaText:     { color: C.brand, fontSize: FONT.sm, fontWeight: '700' },
 });

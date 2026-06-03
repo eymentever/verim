@@ -12,6 +12,8 @@ import { useUtilityStore } from '../src/store/useUtilityStore';
 import { useSubscriptionStore } from '../src/store/useSubscriptionStore';
 import { analyzeConsumption } from '../src/services/leakDetectionService';
 import { calculateBenchmark } from '../src/services/socialBenchmark';
+import { useDualReminder } from '../src/hooks/useReadingReminder';
+import { useIntelligenceAlerts } from '../src/hooks/useIntelligenceAlerts';
 
 const { width: SW } = Dimensions.get('window');
 const GAUGE_SIZE = (SW - 64) / 2;
@@ -134,6 +136,16 @@ export default function Dashboard() {
   // Anomali analizi
   const anomaly   = useMemo(() => analyzeConsumption(activeLogs), [activeLogs]);
   const benchmark = useMemo(() => calculateBenchmark(city, activeLogs), [city, activeLogs]);
+
+  // Yeni okuma sonrası otomatik zeka analizi + push notification
+  useIntelligenceAlerts({ logs: activeLogs, city });
+
+  // Okuma hatırlatıcısı
+  const reminder  = useDualReminder(
+    activeLogs,
+    anomaly.level !== 'normal', // su anomalisi
+    anomaly.level !== 'normal', // gaz anomalisi (aynı skoru paylaşıyorlar)
+  );
 
   // Kritik uyarı pulse animasyonu
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -320,6 +332,56 @@ export default function Dashboard() {
           </View>
         )}
 
+        {/* ── Okuma Öneri Kartı ─────────────────────── */}
+        <TouchableOpacity
+          style={[s.reminderCard, { borderColor: reminder.topReminder.color + '50' }]}
+          onPress={() => router.push('/scan')}
+          activeOpacity={0.85}
+        >
+          <View style={[s.reminderLeft, { backgroundColor: reminder.topReminder.color + '18' }]}>
+            <Text style={s.reminderIcon}>{reminder.topReminder.icon}</Text>
+          </View>
+          <View style={s.reminderBody}>
+            <Text style={[s.reminderTitle, { color: reminder.topReminder.color }]}>
+              {reminder.topReminder.title}
+            </Text>
+            <Text style={s.reminderMsg} numberOfLines={2}>
+              {reminder.topReminder.message}
+            </Text>
+          </View>
+          {(reminder.topReminder.urgency === 'due' || reminder.topReminder.urgency === 'overdue') && (
+            <View style={[s.reminderBadge, { backgroundColor: reminder.topReminder.color }]}>
+              <Text style={s.reminderBadgeText}>Tara →</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* Su + Gaz satır özeti */}
+        {(reminder.topReminder.urgency !== 'never') && (
+          <View style={s.reminderRow}>
+            {(['water', 'gas'] as const).map(t => {
+              const r = t === 'water' ? reminder.water : reminder.gas;
+              return (
+                <View key={t} style={[s.reminderMini, { borderColor: r.color + '40' }]}>
+                  <Text style={[s.reminderMiniIcon]}>{t === 'water' ? '💧' : '🔥'}</Text>
+                  <View>
+                    <Text style={[s.reminderMiniTitle, { color: r.color }]}>
+                      {t === 'water' ? 'Su' : 'Gaz'}
+                    </Text>
+                    <Text style={s.reminderMiniSub}>
+                      {r.daysSinceLast === null
+                        ? 'Henüz okuma yok'
+                        : r.daysUntilNext === 0
+                          ? 'Bugün oku!'
+                          : `${r.daysUntilNext} gün kaldı`}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
         {/* ── Floating Action Buttons ───────────────── */}
         <View style={s.fabRow}>
           <TouchableOpacity
@@ -446,4 +508,49 @@ const s = StyleSheet.create({
   fabGrad:        { paddingVertical: 14, alignItems: 'center', justifyContent: 'center', gap: 6 },
   fabEmoji:       { fontSize: 24 },
   fabLabel:       { fontSize: FONT.sm, fontWeight: '800' },
+
+// Reminder card
+  reminderCard:       { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: RADIUS.lg, borderWidth: 1, padding: 14, marginBottom: 10, gap: 12 },
+  reminderLeft:       { width: 44, height: 44, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
+  reminderIcon:       { fontSize: 22 },
+  reminderBody:       { flex: 1 },
+  reminderTitle:      { fontSize: FONT.sm, fontWeight: '800', marginBottom: 3 },
+  reminderMsg:        { color: C.textDim, fontSize: FONT.xs, lineHeight: 16 },
+  reminderBadge:      { paddingHorizontal: 10, paddingVertical: 6, borderRadius: RADIUS.md },
+  reminderBadgeText:  { color: C.bg, fontSize: FONT.xs, fontWeight: '900' },
+  reminderRow:        { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  reminderMini:       { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.card, borderRadius: RADIUS.md, borderWidth: 1, padding: 10 },
+  reminderMiniIcon:   { fontSize: 18 },
+  reminderMiniTitle:  { fontSize: FONT.xs, fontWeight: '800' },
+  reminderMiniSub:    { color: C.textDim, fontSize: FONT.xs, marginTop: 1 },
+
+  // FAB
+  fabRow:         { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  fab:            { flex: 1, borderRadius: RADIUS.lg, borderWidth: 1, overflow: 'hidden' },
+  fabGrad:        { paddingVertical: 14, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  fabEmoji:       { fontSize: 24 },
+  fabLabel:       { fontSize: FONT.sm, fontWeight: '800' },
+
+  // Benchmark
+  benchCard:      { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: C.cardBorder },
+  benchBadge:     { fontSize: FONT['2xl'], marginBottom: 6 },
+  benchMsg:       { color: C.text, fontSize: FONT.sm, fontWeight: '700', marginBottom: 8 },
+  benchStats:     { flexDirection: 'row', gap: 16 },
+  benchStat:      { color: C.textDim, fontSize: FONT.xs },
+
+  // History
+  histCard:       { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: C.cardBorder },
+  histTitle:      { color: C.textDim, fontSize: FONT.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 },
+  histRow:        { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.divider, gap: 10 },
+  histDot:        { width: 8, height: 8, borderRadius: 4 },
+  histDate:       { color: C.textDim, fontSize: FONT.xs, width: 72 },
+  histType:       { color: C.text, fontSize: FONT.sm, flex: 1 },
+  histCost:       { color: C.text, fontSize: FONT.sm, fontWeight: '700' },
+  histEmpty:      { color: C.textDim, fontSize: FONT.sm, textAlign: 'center', paddingVertical: 16 },
+
+  // Ad
+  ad:             { backgroundColor: C.card, borderRadius: RADIUS.md, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: `${C.brand}30`, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  adText:         { color: C.brand, fontSize: FONT.sm, fontWeight: '700', flex: 1 },
+  limitBtn:       { marginTop: 8 },
+  limitBtnText:   { color: C.pro, fontSize: FONT.xs, fontWeight: '700' },
 });

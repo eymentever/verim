@@ -5,6 +5,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import { C } from '../src/theme';
 import { useUtilityStore } from '../src/store/useUtilityStore';
 import { initRevenueCat } from '../src/services/revenueCatService';
+import {
+  setupNotificationChannels,
+  addNotificationResponseListener,
+} from '../src/services/notificationService';
 import { Home, Camera, BarChart3, Settings } from 'lucide-react-native';
 
 // Splash screen'i otomatik kapanmaktan koru; biz kontrol edeceğiz
@@ -31,10 +35,19 @@ export default function RootLayout() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // RevenueCat başlat ve splash'ı kapat
+  // RevenueCat + Bildirim kanalları başlat, splash'ı kapat
   useEffect(() => {
     initRevenueCat();
+    setupNotificationChannels().catch(() => {});
     SplashScreen.hideAsync().catch(() => {});
+
+    // Bildirimlere tıklama dinleyicisi
+    const sub = addNotificationResponseListener((data) => {
+      if (data?.type === 'ANOMALY_SPIKE' || data?.type === 'LEAK_SUSPICION') {
+        router.push('/analytics');
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   // Setup tamamlanmadıysa setup'a yönlendir.

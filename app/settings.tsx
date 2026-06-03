@@ -6,11 +6,13 @@ import {
 import { useRouter } from 'expo-router';
 import { C, FONT, RADIUS } from '../src/theme';
 import { User, CreditCard, Shield, FileText, Trash2, MapPin, Home, Droplet, Flame, Check } from 'lucide-react-native';
-import { useUtilityStore, Property } from '../src/store/useUtilityStore';
+import { useUtilityStore, Property, getBillBreakdown } from '../src/store/useUtilityStore';
 import { useSubscriptionStore, PLANS } from '../src/store/useSubscriptionStore';
 import { generateHandoverPDF } from '../src/services/pdfReportService';
 import { usePrepaidMeter } from '../src/hooks/usePrepaidMeter';
-import { getDistricts } from '../src/services/tariffEngine';
+import { getDistricts, getCityConfig } from '../src/services/tariffEngine';
+import { auditWaterBill } from '../src/services/waterIntelligenceService';
+import { auditBill as auditGasBill } from '../src/services/gasIntelligenceService';
 
 // ── Tier renk haritası ────────────────────────────────────────────────────────
 
@@ -81,6 +83,10 @@ export default function SettingsScreen() {
 
   // Devir PDF
   const [genPDF, setGenPDF] = useState(false);
+
+  // Fatura Karşılaştır
+  const [waterBillInput, setWaterBillInput] = useState('');
+  const [gasBillInput,   setGasBillInput]   = useState('');
 
   // Edit Property Modal States
   const [modalVisible, setModalVisible] = useState(false);
@@ -383,6 +389,108 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* ── Fatura Karşılaştır ─────────────────────── */}
+        <SectionTitle title="Fatura Doğrulama" />
+        <View style={s.card}>
+          <Text style={s.auditDesc}>
+            Belediyenin gönderdiği fatura tutarını girin. Verim'in hesabıyla karşılaştırıp fark varsa itiraz gerekip gerekmediğini söyler.
+          </Text>
+          {prop && (() => {
+            const city     = prop.city;
+            const district = prop.district;
+            const config   = getCityConfig(city);
+
+            // Son aya ait tüketim toplamları
+            const now = new Date();
+            const monthLogs = activeLogs.filter(l => {
+              const d = new Date(l.date);
+              return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            });
+            const waterM3    = monthLogs.filter(l => l.type === 'water').reduce((s, l) => s + l.consumption, 0);
+            const gasM3      = monthLogs.filter(l => l.type === 'gas').reduce((s, l) => s + l.consumption, 0);
+
+            const expectedWater = waterM3 > 0
+              ? getBillBreakdown('water', waterM3, city, district).totalCost : 0;
+            const expectedGas   = gasM3 > 0
+              ? getBillBreakdown('gas', gasM3, city, district).totalCost : 0;
+
+            const waterAudit = auditWaterBill(expectedWater, parseFloat(waterBillInput) || undefined);
+            const gasAudit   = auditGasBill(expectedGas,   parseFloat(gasBillInput)   || undefined);
+
+            const auditColor = (v: string) =>
+              v === 'overcharged' ? C.danger :
+              v === 'match'       ? C.brand  :
+              v === 'undercharged'? C.warn   : C.textDim;
+
+            return (
+              <>
+                <Text style={s.auditLabel}>💧 Su Faturası (bu ay)</Text>
+                <Text style={s.auditExpected}>
+                  Verim hesabı: {expectedWater > 0 ? `₺${expectedWater.toFixed(2)}` : 'Veri yok'}
+                  {waterM3 > 0 ? ` (${waterM3.toFixed(1)} m³)` : ''}
+                </Text>
+                <TextInput
+                  style={s.auditInput}
+                  placeholder="Belediyenin gönderdiği tutar (₺)"
+                  placeholderTextColor={C.textMuted}
+                  keyboardType="numeric"
+                  value={waterBillInput}
+                  onChangeText={setWaterBillInput}
+                />
+                {waterBillInput.trim() !== '' && expectedWater > 0 && (
+                  <View style={[s.auditResult, { borderColor: auditColor(waterAudit.verdict) + '60' }]}>
+                    <Text style={[s.auditResultText, { color: auditColor(waterAudit.verdict) }]}>
+                      {waterAudit.message}
+                    </Text>
+                    {waterAudit.verdict === 'overcharged' && waterAudit.appealSteps && (
+                      <View style={{ marginTop: 8 }}>
+                        {waterAudit.appealSteps.map((step, i) => (
+                          <Text key={i} style={s.auditStep}>{i + 1}. {step}</Text>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                <View style={s.auditDivider} />
+
+                <Text style={s.auditLabel}>🔥 Doğalgaz Faturası (bu ay)</Text>
+                <Text style={s.auditExpected}>
+                  Verim hesabı: {expectedGas > 0 ? `₺${expectedGas.toFixed(2)}` : 'Veri yok'}
+                  {gasM3 > 0 ? ` (${gasM3.toFixed(1)} m³)` : ''}
+                </Text>
+                <TextInput
+                  style={s.auditInput}
+                  placeholder="Belediyenin gönderdiği tutar (₺)"
+                  placeholderTextColor={C.textMuted}
+                  keyboardType="numeric"
+                  value={gasBillInput}
+                  onChangeText={setGasBillInput}
+                />
+                {gasBillInput.trim() !== '' && expectedGas > 0 && (
+                  <View style={[s.auditResult, { borderColor: auditColor(gasAudit.verdict) + '60' }]}>
+                    <Text style={[s.auditResultText, { color: auditColor(gasAudit.verdict) }]}>
+                      {gasAudit.message}
+                    </Text>
+                  </View>
+                )}
+
+                <Text style={s.auditFooter}>
+                  Kaynak: {
+                    city === 'İstanbul' ? 'İSKİ & İGDAŞ' :
+                    city === 'Ankara'   ? 'ASKİ & BAŞKENTGAZ' :
+                    city === 'İzmir'    ? 'İZSU & İZMİRGAZ' : 'SASKİ & AGDAŞ'
+                  } {config.lastUpdated} resmi tarifesi
+                </Text>
+              </>
+            );
+          })()}
+
+          {!prop && (
+            <Text style={s.auditEmpty}>Fatura karşılaştırması için önce bir mülk ekleyin.</Text>
+          )}
+        </View>
+
         {/* ── Veri & Gizlilik ────────────────────────── */}
         <SectionTitle title="Veri & Gizlilik" />
         <View style={s.card}>
@@ -542,31 +650,26 @@ const s = StyleSheet.create({
   header:           { marginBottom: 20, paddingTop: 48 },
   title:            { color: C.text, fontSize: FONT.xl, fontWeight: '900' },
 
-  // Plan kartı
   planCard:         { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 20, borderWidth: 2, flexDirection: 'row', alignItems: 'center' },
   planLabel:        { color: C.textMuted, fontSize: FONT.xs, textTransform: 'uppercase', letterSpacing: 0.8 },
   planName:         { fontSize: FONT.lg, fontWeight: '900', marginTop: 2 },
   planSub:          { color: C.textDim, fontSize: FONT.xs, marginTop: 2 },
   planArrow:        { fontWeight: '800', fontSize: FONT.sm },
 
-  // Genel kart
   card:             { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1, borderColor: C.cardBorder, marginBottom: 16 },
   fieldLabel:       { color: C.textDim, fontSize: FONT.xs, marginBottom: 6 },
   input:            { backgroundColor: C.bg, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: C.border, color: C.text, padding: 12, fontSize: FONT.md, marginBottom: 12 },
   saveBtn:          { borderRadius: RADIUS.md, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
   saveBtnText:      { fontWeight: '800', fontSize: FONT.md },
 
-  // Switch
   switchRow:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   switchLabel:      { color: C.text, fontSize: FONT.md, fontWeight: '600' },
   switchSub:        { color: C.textDim, fontSize: FONT.xs, marginTop: 2 },
 
-  // Prepaid
   prepaidStatus:    { borderRadius: RADIUS.sm, padding: 10, borderWidth: 1, marginTop: 8, marginBottom: 8 },
   prepaidStatusText:{ fontWeight: '700', fontSize: FONT.sm },
   prepaidNote:      { color: C.textDim, fontSize: FONT.xs, lineHeight: 16 },
 
-  // Mülkler
   propRow:          { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: C.border, paddingHorizontal: 10, marginBottom: 8, gap: 10 },
   propIcon:         { fontSize: 20 },
   propName:         { color: C.text, fontSize: FONT.sm, fontWeight: '600' },
@@ -576,16 +679,26 @@ const s = StyleSheet.create({
   lockedText:       { color: C.pro, fontSize: FONT.sm, fontWeight: '600' },
   emptyText:        { color: C.textDim, fontSize: FONT.sm },
 
-  // Devir
   devirDesc:        { color: C.textDim, fontSize: FONT.sm, lineHeight: 18, marginBottom: 14 },
   proAlert:         { backgroundColor: `${C.pro}12`, borderRadius: RADIUS.sm, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: `${C.pro}40` },
   proAlertText:     { color: C.pro, fontSize: FONT.sm, fontWeight: '600' },
   devirBtn:         { borderRadius: RADIUS.md, paddingVertical: 14, alignItems: 'center' },
   devirBtnText:     { fontWeight: '900', fontSize: FONT.md },
 
+  // Fatura Doğrulama
+  auditDesc:        { color: C.textDim, fontSize: FONT.sm, lineHeight: 18, marginBottom: 14 },
+  auditLabel:       { color: C.text, fontSize: FONT.sm, fontWeight: '700', marginBottom: 4 },
+  auditExpected:    { color: C.textDim, fontSize: FONT.xs, marginBottom: 8 },
+  auditInput:       { backgroundColor: C.bg, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: C.border, color: C.text, padding: 12, fontSize: FONT.md, marginBottom: 8 },
+  auditResult:      { borderRadius: RADIUS.sm, padding: 12, borderWidth: 1, backgroundColor: C.bg, marginBottom: 4 },
+  auditResultText:  { fontSize: FONT.sm, fontWeight: '700', lineHeight: 18 },
+  auditStep:        { color: C.textDim, fontSize: FONT.xs, lineHeight: 17, marginTop: 2 },
+  auditDivider:     { height: 1, backgroundColor: C.divider, marginVertical: 14 },
+  auditFooter:      { color: C.textMuted, fontSize: 10, marginTop: 8, fontStyle: 'italic' },
+  auditEmpty:       { color: C.textDim, fontSize: FONT.sm, textAlign: 'center', paddingVertical: 8 },
+
   version:          { color: C.textMuted, fontSize: FONT.xs, marginTop: 12 },
 
-  // Modal Styles
   modalOverlay:     { flex: 1, backgroundColor: 'rgba(7,10,19,0.8)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   modalContainer:   { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 20, borderWidth: 1, borderColor: C.cardBorder, width: '100%', maxWidth: 360 },
   modalTitle:       { color: C.text, fontSize: FONT.lg, fontWeight: '900', marginBottom: 16 },
