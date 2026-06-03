@@ -16,10 +16,14 @@
     "android": {
       "package": "com.tevertechnology.verim",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#070A13"
       },
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
       ]
     },
     "web": {
@@ -35,6 +39,14 @@
           "cameraPermission": "Sayacınızı kamerayla okuyabilmek için kamera izni gereklidir.",
           "microphonePermission": false,
           "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#00FF9D",
+          "sounds": []
         }
       ]
     ],

@@ -1,8 +1,9 @@
 /**
- * PDF Sayaç Teslim Tutanağı Servisi
- * Gerçek entegrasyon: react-native-html-to-pdf veya expo-print
+ * PDF Sayaç Teslim Tutanağı Servisi — expo-print + expo-sharing
  */
 
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { ConsumptionLog } from '../store/useUtilityStore';
 
 export interface HandoverPDFInput {
@@ -12,7 +13,7 @@ export interface HandoverPDFInput {
   district: string;
   tenantName: string;
   landlordName: string;
-  handoverDate: string;         // ISO
+  handoverDate: string;
   waterIndex: number;
   gasIndex: number;
   deviceLocation?: { lat: number; lng: number };
@@ -20,8 +21,8 @@ export interface HandoverPDFInput {
 }
 
 export interface HandoverPDFResult {
-  filePath: string;    // cihaz üzerindeki dosya yolu
-  htmlContent: string; // önizleme için ham HTML
+  filePath: string;
+  htmlContent: string;
 }
 
 function generateHTML(input: HandoverPDFInput): string {
@@ -81,18 +82,15 @@ function generateHTML(input: HandoverPDFInput): string {
 }
 
 export async function generateHandoverPDF(input: HandoverPDFInput): Promise<HandoverPDFResult> {
-  // Gerçek uygulama:
-  // import * as Print from 'expo-print';
-  // const { uri } = await Print.printToFileAsync({ html });
-  // return { filePath: uri, htmlContent: html };
-
   const html = generateHTML(input);
-
-  // Simülasyon — gerçek dosya yolu döner
-  await new Promise((r) => setTimeout(r, 1200));
-
-  return {
-    filePath: `/storage/emulated/0/Downloads/verim_tutanak_${Date.now()}.pdf`,
-    htmlContent: html,
-  };
+  const { uri } = await Print.printToFileAsync({ html, base64: false });
+  const canShare = await Sharing.isAvailableAsync();
+  if (canShare) {
+    await Sharing.shareAsync(uri, {
+      mimeType: 'application/pdf',
+      dialogTitle: 'Teslim Tutanağı',
+      UTI: 'com.adobe.pdf',
+    });
+  }
+  return { filePath: uri, htmlContent: html };
 }

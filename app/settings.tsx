@@ -532,6 +532,8 @@ export default function SettingsScreen() {
               { text: 'İptal', style: 'cancel' },
               { text: 'Evet, Sil', style: 'destructive', onPress: () => {
                 store.logs.forEach(l => store.removeLog(l.id));
+                store.properties.forEach(p => store.removeProperty(p.id));
+                store.setProfile({ setupComplete: false, city: 'İstanbul', district: '', name: '', monthlyBudget: 0 });
                 Alert.alert('✓ Silindi', 'Tüm veriler temizlendi.');
               }},
             ])}>
