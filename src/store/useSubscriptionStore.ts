@@ -143,6 +143,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       canScan: (type) => {
         const plan = get().currentPlan();
+        // Süresi dolmuş abonelik → free limit uygula
+        if (plan.maxScansPerMonth === -1 && !get().isActive()) {
+          return get().monthlyScanCount(type) < PLANS['free'].maxScansPerMonth;
+        }
         if (plan.maxScansPerMonth === -1) return true;
         return get().monthlyScanCount(type) < plan.maxScansPerMonth;
       },

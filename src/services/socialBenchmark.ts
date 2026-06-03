@@ -10,10 +10,26 @@ export interface CityAverage {
 
 // Türkiye şehir ortalama tüketim verileri (TÜİK + belediye kaynaklı tahmin)
 export const CITY_AVERAGES: Record<string, CityAverage> = {
-  İstanbul: { city: 'İstanbul', avgMonthlyWater: 8.2,  avgMonthlyGas: 28.5, avgMonthlyCost: 820, sampleSize: 125400 },
-  Ankara:   { city: 'Ankara',   avgMonthlyWater: 7.6,  avgMonthlyGas: 31.2, avgMonthlyCost: 740, sampleSize: 68200 },
-  İzmir:    { city: 'İzmir',    avgMonthlyWater: 7.9,  avgMonthlyGas: 22.1, avgMonthlyCost: 680, sampleSize: 52100 },
-  Sakarya:  { city: 'Sakarya',  avgMonthlyWater: 7.8,  avgMonthlyGas: 29.0, avgMonthlyCost: 710, sampleSize: 22400 },
+  İstanbul:   { city: 'İstanbul',   avgMonthlyWater: 8.2,  avgMonthlyGas: 28.5, avgMonthlyCost: 820, sampleSize: 125400 },
+  Ankara:     { city: 'Ankara',     avgMonthlyWater: 7.6,  avgMonthlyGas: 31.2, avgMonthlyCost: 740, sampleSize: 68200 },
+  İzmir:      { city: 'İzmir',      avgMonthlyWater: 7.9,  avgMonthlyGas: 22.1, avgMonthlyCost: 680, sampleSize: 52100 },
+  Sakarya:    { city: 'Sakarya',    avgMonthlyWater: 7.8,  avgMonthlyGas: 29.0, avgMonthlyCost: 710, sampleSize: 22400 },
+  Bursa:      { city: 'Bursa',      avgMonthlyWater: 7.7,  avgMonthlyGas: 30.0, avgMonthlyCost: 730, sampleSize: 18000 },
+  Antalya:    { city: 'Antalya',    avgMonthlyWater: 8.5,  avgMonthlyGas: 18.0, avgMonthlyCost: 650, sampleSize: 15000 },
+  Kocaeli:    { city: 'Kocaeli',    avgMonthlyWater: 7.5,  avgMonthlyGas: 29.5, avgMonthlyCost: 720, sampleSize: 12000 },
+  Konya:      { city: 'Konya',      avgMonthlyWater: 7.2,  avgMonthlyGas: 32.0, avgMonthlyCost: 710, sampleSize: 10000 },
+  Gaziantep:  { city: 'Gaziantep',  avgMonthlyWater: 7.0,  avgMonthlyGas: 30.5, avgMonthlyCost: 700, sampleSize: 9000 },
+  Adana:      { city: 'Adana',      avgMonthlyWater: 8.0,  avgMonthlyGas: 20.0, avgMonthlyCost: 660, sampleSize: 8500 },
+  Mersin:     { city: 'Mersin',     avgMonthlyWater: 8.1,  avgMonthlyGas: 19.5, avgMonthlyCost: 655, sampleSize: 7500 },
+  Kayseri:    { city: 'Kayseri',    avgMonthlyWater: 7.3,  avgMonthlyGas: 33.0, avgMonthlyCost: 725, sampleSize: 7000 },
+  Eskişehir:  { city: 'Eskişehir',  avgMonthlyWater: 7.4,  avgMonthlyGas: 30.0, avgMonthlyCost: 715, sampleSize: 6000 },
+  Diyarbakır: { city: 'Diyarbakır', avgMonthlyWater: 7.1,  avgMonthlyGas: 28.0, avgMonthlyCost: 690, sampleSize: 5500 },
+  Samsun:     { city: 'Samsun',     avgMonthlyWater: 7.6,  avgMonthlyGas: 27.5, avgMonthlyCost: 700, sampleSize: 5000 },
+  Manisa:     { city: 'Manisa',     avgMonthlyWater: 7.8,  avgMonthlyGas: 25.0, avgMonthlyCost: 690, sampleSize: 4500 },
+  Balıkesir:  { city: 'Balıkesir',  avgMonthlyWater: 7.5,  avgMonthlyGas: 26.0, avgMonthlyCost: 695, sampleSize: 4000 },
+  Hatay:      { city: 'Hatay',      avgMonthlyWater: 7.9,  avgMonthlyGas: 21.0, avgMonthlyCost: 665, sampleSize: 3500 },
+  Trabzon:    { city: 'Trabzon',    avgMonthlyWater: 7.7,  avgMonthlyGas: 28.0, avgMonthlyCost: 705, sampleSize: 3000 },
+  Genel:      { city: 'Genel',      avgMonthlyWater: 7.8,  avgMonthlyGas: 27.0, avgMonthlyCost: 720, sampleSize: 1000 },
 };
 
 export interface BenchmarkResult {
@@ -33,7 +49,7 @@ export function calculateBenchmark(
   city: string,
   logs: ConsumptionLog[]
 ): BenchmarkResult | null {
-  const avg = CITY_AVERAGES[city];
+  const avg = CITY_AVERAGES[city] ?? CITY_AVERAGES['Genel'];
   if (!avg || logs.length === 0) return null;
 
   const now = new Date();

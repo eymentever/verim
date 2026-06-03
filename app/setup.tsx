@@ -157,7 +157,7 @@ export default function SetupScreen() {
         {step === 4 && (
           <View style={s.card}>
             <Text style={s.stepTitle}>Mahalle ve Sokak? 🏠</Text>
-            <Text style={s.stepDesc}>Tüketim analizi ve fatura adresi doğrulaması için girin.</Text>
+            <Text style={s.stepDesc}>Tüketim analizi için girin (isteğe bağlı).</Text>
             <TextInput
               style={s.input}
               placeholder="Mahalle, sokak, apartman adı..."
@@ -167,12 +167,16 @@ export default function SetupScreen() {
               maxLength={100}
             />
             <TouchableOpacity
-              style={[s.primaryBtn, (!address || address.trim() === '') && s.btnDisabled]}
-              disabled={!address || address.trim() === ''}
+              style={s.primaryBtn}
               onPress={handleFinish}
             >
               <Text style={s.primaryBtnText}>Başla 🚀</Text>
             </TouchableOpacity>
+            {!address.trim() && (
+              <TouchableOpacity onPress={handleFinish} style={{ alignItems: 'center', marginTop: 8 }}>
+                <Text style={{ color: C.textDim, fontSize: FONT.xs }}>Atla →</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -209,7 +213,7 @@ export default function SetupScreen() {
 
             <View style={s.privacyNote}>
               <Text style={s.privacyText}>
-                🔒 Verileriniz yalnızca cihazınızda cihazınızda saklanır. Sunucuya gönderilmez, üçüncü taraflarla paylaşılmaz.
+                🔒 Verileriniz yalnızca cihazınızda saklanır. Sunucuya gönderilmez, üçüncü taraflarla paylaşılmaz.
               </Text>
             </View>
             </>
@@ -242,9 +246,6 @@ const s = StyleSheet.create({
   cityLabel:     { color: C.textDim, fontWeight: '600', fontSize: FONT.sm },
   cityEstLabel:  { color: C.textMuted, fontSize: 9, fontWeight: '700' },
   cityNote:      { color: C.textMuted, fontSize: 10, marginBottom: 4 },
-  cityList:      { maxHeight: 220, marginBottom: 12 },
-  cityRowBtn:    { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: C.divider },
-  cityRowLabel:  { color: C.text, fontSize: FONT.md },
   districtList:  { maxHeight: 220, marginBottom: 4 },
   districtBtn:   { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: C.divider },
   districtBtnActive: {},

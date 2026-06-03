@@ -78,7 +78,7 @@ function PlanCard({
 export default function PaywallScreen() {
   const router = useRouter();
   const { tier, upgradeTo } = useSubscriptionStore();
-  const { purchase, offerings, purchasing } = useRevenueCat();
+  const { purchase, restore, offerings, purchasing } = useRevenueCat();
   const [cycle, setCycle] = useState<BillingCycle>('yearly');
 
   const handleSelect = (selectedTier: SubscriptionTier) => {
@@ -155,7 +155,14 @@ export default function PaywallScreen() {
         ))}
 
         {/* Satın almaları geri yükle */}
-        <TouchableOpacity style={s.restoreBtn} onPress={() => Alert.alert('Geri Yüklendi', 'Mevcut abonelikleriniz kontrol edildi.')}>
+        <TouchableOpacity style={s.restoreBtn} onPress={async () => {
+          const result = await restore();
+          if (result.success && result.tier) {
+            Alert.alert('✅ Geri Yüklendi', `${result.tier} planınız aktive edildi.`, [{ text: 'Harika!', onPress: () => router.back() }]);
+          } else {
+            Alert.alert('Bilgi', 'Aktif abonelik bulunamadı.');
+          }
+        }}>
           <Text style={s.restoreText}>Satın almaları geri yükle</Text>
         </TouchableOpacity>
 
