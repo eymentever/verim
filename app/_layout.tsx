@@ -50,10 +50,10 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
-  // Setup tamamlanmadıysa setup'a yönlendir.
+  // Setup tamamlanmadıysa welcome → setup akışına yönlendir.
   useEffect(() => {
-    if (!profile.setupComplete && pathname !== '/setup') {
-      router.replace('/setup');
+    if (!profile.setupComplete && pathname !== '/setup' && pathname !== '/welcome') {
+      router.replace('/welcome' as any);
     }
   }, [profile.setupComplete, pathname]);
 
@@ -116,6 +116,7 @@ export default function RootLayout() {
         }}
       />
       {/* Hidden screens — modal olarak açılır */}
+      <Tabs.Screen name="welcome"     options={{ href: null }} />
       <Tabs.Screen name="setup"       options={{ href: null }} />
       <Tabs.Screen name="paywall"     options={{ href: null }} />
       <Tabs.Screen name="marketplace" options={{ href: null }} />

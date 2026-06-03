@@ -143,8 +143,8 @@ export default function Dashboard() {
   // Okuma hatırlatıcısı
   const reminder  = useDualReminder(
     activeLogs,
-    anomaly.level !== 'normal', // su anomalisi
-    anomaly.level !== 'normal', // gaz anomalisi (aynı skoru paylaşıyorlar)
+    anomaly.level !== 'none', // su anomalisi
+    anomaly.level !== 'none', // gaz anomalisi (aynı skoru paylaşıyorlar)
   );
 
   // Kritik uyarı pulse animasyonu
@@ -525,18 +525,9 @@ const s = StyleSheet.create({
   reminderMiniSub:    { color: C.textDim, fontSize: FONT.xs, marginTop: 1 },
 
   // FAB
-  fabRow:         { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  fab:            { flex: 1, borderRadius: RADIUS.lg, borderWidth: 1, overflow: 'hidden' },
-  fabGrad:        { paddingVertical: 14, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  fabEmoji:       { fontSize: 24 },
-  fabLabel:       { fontSize: FONT.sm, fontWeight: '800' },
 
   // Benchmark
-  benchCard:      { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: C.cardBorder },
-  benchBadge:     { fontSize: FONT['2xl'], marginBottom: 6 },
-  benchMsg:       { color: C.text, fontSize: FONT.sm, fontWeight: '700', marginBottom: 8 },
   benchStats:     { flexDirection: 'row', gap: 16 },
-  benchStat:      { color: C.textDim, fontSize: FONT.xs },
 
   // History
   histCard:       { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: C.cardBorder },
@@ -549,8 +540,5 @@ const s = StyleSheet.create({
   histEmpty:      { color: C.textDim, fontSize: FONT.sm, textAlign: 'center', paddingVertical: 16 },
 
   // Ad
-  ad:             { backgroundColor: C.card, borderRadius: RADIUS.md, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: `${C.brand}30`, flexDirection: 'row', alignItems: 'center', gap: 10 },
   adText:         { color: C.brand, fontSize: FONT.sm, fontWeight: '700', flex: 1 },
-  limitBtn:       { marginTop: 8 },
-  limitBtnText:   { color: C.pro, fontSize: FONT.xs, fontWeight: '700' },
 });

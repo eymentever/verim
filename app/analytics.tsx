@@ -609,4 +609,16 @@ const s = StyleSheet.create({
   // CTA
   cta:         { backgroundColor: `${C.brand}12`, borderRadius: RADIUS.lg, padding: 16, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: `${C.brand}25` },
   ctaText:     { color: C.brand, fontSize: FONT.sm, fontWeight: '700' },
+
+  // Missing styles referenced in JSX
+  sub:         { color: C.textDim, fontSize: FONT.xs, marginTop: 2 },
+  ecoDesc:     { color: C.textDim, fontSize: FONT.sm, textAlign: 'center', marginBottom: 14 },
+  filterLabel: { fontSize: FONT.xs, fontWeight: '700', color: C.textDim },
+  statsRow:    { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  monthlyCard: { backgroundColor: C.card, borderRadius: RADIUS.xl, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: C.cardBorder },
+  monthRow:    { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.divider },
+  monthLabel:  { color: C.textDim, fontSize: FONT.xs, width: 36 },
+  monthVals:   { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  monthVal:    { color: C.text, fontSize: FONT.xs },
+  monthSep:    { color: C.textMuted, fontSize: FONT.xs },
 });

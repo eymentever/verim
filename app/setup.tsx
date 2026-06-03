@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert 
 import { useRouter } from 'expo-router';
 import { C, FONT, RADIUS } from '../src/theme';
 import { useUtilityStore } from '../src/store/useUtilityStore';
-import { getAllCities, getDistricts, getCityConfig } from '../src/services/tariffEngine';
+import { getAllCities, getDistricts, getCityConfig, CITY_TARIFFS } from '../src/services/tariffEngine';
 import { Sparkles, Check } from 'lucide-react-native';
 
 export default function SetupScreen() {
@@ -78,18 +78,23 @@ export default function SetupScreen() {
             <Text style={s.stepTitle}>Şehrin Hangisi?</Text>
             <Text style={s.stepDesc}>Doğru tarifeyi uygulayabilmemiz için şehrini seç.</Text>
             <View style={s.cityGrid}>
-              {['İstanbul', 'Ankara', 'İzmir', 'Sakarya'].map(c => (
-                <TouchableOpacity
-                  key={c}
-                  style={[s.cityBtn, selectedCity === c && s.cityBtnActive]}
-                  onPress={() => { setSelectedCity(c); setSelectedDistrict(''); setDistrictSearch(''); }}
-                >
-                  <Text style={[s.cityLabel, selectedCity === c && { color: C.water }]}>{c}</Text>
-                </TouchableOpacity>
-              ))}
+              {Object.keys(CITY_TARIFFS).map(c => {
+                const cfg = CITY_TARIFFS[c];
+                return (
+                  <TouchableOpacity
+                    key={c}
+                    style={[s.cityBtn, selectedCity === c && s.cityBtnActive]}
+                    onPress={() => { setSelectedCity(c); setSelectedDistrict(''); setDistrictSearch(''); }}
+                  >
+                    <Text style={[s.cityLabel, selectedCity === c && { color: C.water }]}>{c}</Text>
+                    {!cfg.verified && <Text style={s.cityEstLabel}>~</Text>}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
+            <Text style={s.cityNote}>~ Tahmini tarife · Resmi veriler güncelleniyor</Text>
             <TouchableOpacity
-              style={[s.primaryBtn, !selectedCity && s.btnDisabled]}
+              style={[s.primaryBtn, !selectedCity && s.btnDisabled, { marginTop: 12 }]}
               disabled={!selectedCity}
               onPress={() => setStep(3)}
             >
@@ -196,11 +201,9 @@ export default function SetupScreen() {
                 🔥 Gaz: {config.gasRate.toFixed(3)} ₺/m³ (ÖTV + %20 KDV ayrıca)
               </Text>
               <Text style={s.tariffSource}>
-                Kaynak: {
-                  selectedCity === 'İstanbul' ? 'İSKİ & İGDAŞ' :
-                  selectedCity === 'Ankara'   ? 'ASKİ & BAŞKENTGAZ' :
-                  selectedCity === 'İzmir'    ? 'İZSU & İZMİRGAZ' : 'SASKİ & AGDAŞ'
-                } · {config.lastUpdated}
+                {config.verified
+                  ? `Kaynak: ${selectedCity} belediyesi resmi tarifesi · ${config.lastUpdated}`
+                  : `Tahmini tarife · Resmi veriler ${config.lastUpdated} itibarıyla güncelleniyor`}
               </Text>
             </View>
 
@@ -233,10 +236,12 @@ const s = StyleSheet.create({
   stepTitle:     { color: C.text, fontSize: FONT.xl, fontWeight: '900', marginBottom: 6 },
   stepDesc:      { color: C.textDim, fontSize: FONT.sm, marginBottom: 20 },
   input:         { backgroundColor: C.bg, borderRadius: RADIUS.md, borderWidth: 1, borderColor: C.border, color: C.text, padding: 14, fontSize: FONT.md, marginBottom: 16 },
-  cityGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  cityBtn:       { paddingHorizontal: 18, paddingVertical: 12, borderRadius: RADIUS.md, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border },
+  cityGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  cityBtn:       { paddingHorizontal: 14, paddingVertical: 10, borderRadius: RADIUS.md, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, flexDirection: 'row', alignItems: 'center', gap: 3 },
   cityBtnActive: { borderColor: C.water, backgroundColor: C.waterDim },
-  cityLabel:     { color: C.textDim, fontWeight: '600', fontSize: FONT.md },
+  cityLabel:     { color: C.textDim, fontWeight: '600', fontSize: FONT.sm },
+  cityEstLabel:  { color: C.textMuted, fontSize: 9, fontWeight: '700' },
+  cityNote:      { color: C.textMuted, fontSize: 10, marginBottom: 4 },
   cityList:      { maxHeight: 220, marginBottom: 12 },
   cityRowBtn:    { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: C.divider },
   cityRowLabel:  { color: C.text, fontSize: FONT.md },

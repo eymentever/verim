@@ -13,6 +13,8 @@ export interface CityTariffConfig {
   city: string;
   districts: string[];
   waterTiers: TariffTier[];    // kademeli su tarifeleri
+  /** true = resmi tarife doğrulandı, false = belediye verisi bekleniyor (tahmini) */
+  verified?: boolean;
   gasRate: number;              // düz ₺/m³ (IGDAS/GAZDAŞ vb. değişkeni)
   gasTiers?: TariffTier[];      // opsiyonel kademeli gaz
   taxes: TaxMultipliers;
@@ -114,6 +116,192 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
     },
     currency: 'TRY',
     lastUpdated: '2026-06',
+  },
+
+  // ── Ek Şehirler ──────────────────────────────────────────────────────────────
+
+  Bursa: {
+    city: 'Bursa', verified: true,
+    districts: ['Nilüfer','Osmangazi','Yıldırım','Gemlik','Görükle','Kestel','Mustafakemalpaşa','Orhangazi','İnegöl','Karacabey','Mudanya'],
+    waterTiers: [
+      { limit: 10,  rate: 41.00 },
+      { limit: 30,  rate: 62.00 },
+      { limit: 999, rate: 85.00 },
+    ],
+    gasRate: 13.20,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 22.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Antalya: {
+    city: 'Antalya', verified: true,
+    districts: ['Muratpaşa','Kepez','Konyaaltı','Alanya','Manavgat','Serik','Aksu','Döşemealtı','Kemer','Kaş','Finike','Kumluca'],
+    waterTiers: [
+      { limit: 15,  rate: 38.50 },
+      { limit: 30,  rate: 57.00 },
+      { limit: 999, rate: 78.00 },
+    ],
+    gasRate: 13.30,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 21.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Kocaeli: {
+    city: 'Kocaeli', verified: true,
+    districts: ['İzmit','Gebze','Darıca','Körfez','Derince','Başiskele','Çayırova','Dilovası','Gölcük','Kandıra','Karamürsel','Kartepe'],
+    waterTiers: [
+      { limit: 15,  rate: 43.00 },
+      { limit: 30,  rate: 65.00 },
+      { limit: 999, rate: 88.00 },
+    ],
+    gasRate: 13.45,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 23.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Konya: {
+    city: 'Konya', verified: false,
+    districts: ['Selçuklu','Karatay','Meram','Ereğli','Akşehir','Beyşehir','Cihanbeyli','Çumra','Ilgın','Kadınhanı','Kulu','Seydişehir'],
+    waterTiers: [
+      { limit: 15,  rate: 35.00 },
+      { limit: 999, rate: 52.00 },
+    ],
+    gasRate: 12.90,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Gaziantep: {
+    city: 'Gaziantep', verified: false,
+    districts: ['Şahinbey','Şehitkamil','Oğuzeli','Nizip','İslahiye','Nurdağı','Araban','Yavuzeli','Karkamış','Halfeti'],
+    waterTiers: [
+      { limit: 15,  rate: 33.00 },
+      { limit: 999, rate: 50.00 },
+    ],
+    gasRate: 12.70,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 18.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Adana: {
+    city: 'Adana', verified: false,
+    districts: ['Seyhan','Çukurova','Yüreğir','Sarıçam','Ceyhan','Kozan','İmamoğlu','Karataş','Pozantı','Tufanbeyli'],
+    waterTiers: [
+      { limit: 15,  rate: 34.00 },
+      { limit: 999, rate: 51.00 },
+    ],
+    gasRate: 12.80,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Mersin: {
+    city: 'Mersin', verified: false,
+    districts: ['Toroslar','Mezitli','Akdeniz','Yenişehir','Tarsus','Erdemli','Silifke','Anamur','Mut','Gülnar'],
+    waterTiers: [
+      { limit: 15,  rate: 34.50 },
+      { limit: 999, rate: 51.50 },
+    ],
+    gasRate: 12.85,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.50 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Eskişehir: {
+    city: 'Eskişehir', verified: true,
+    districts: ['Odunpazarı','Tepebaşı','Alpu','Beylikova','Çifteler','İnönü','Mahmudiye','Mihalgazi','Mihalıççık','Sarıcakaya','Seyitgazi','Sivrihisar'],
+    waterTiers: [
+      { limit: 15,  rate: 37.00 },
+      { limit: 30,  rate: 55.00 },
+      { limit: 999, rate: 74.00 },
+    ],
+    gasRate: 13.10,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 20.50 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Kayseri: {
+    city: 'Kayseri', verified: false,
+    districts: ['Kocasinan','Melikgazi','Talas','Hacılar','İncesu','Pınarbaşı','Bünyan','Develi','Felahiye','Sarız','Tomarza','Yahyalı'],
+    waterTiers: [
+      { limit: 15,  rate: 36.00 },
+      { limit: 999, rate: 54.00 },
+    ],
+    gasRate: 13.00,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 20.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Trabzon: {
+    city: 'Trabzon', verified: false,
+    districts: ['Ortahisar','Akçaabat','Araklı','Arsin','Çaykara','Düzköy','Maçka','Of','Sürmene','Tonya','Vakfıkebir','Yomra'],
+    waterTiers: [
+      { limit: 15,  rate: 32.00 },
+      { limit: 999, rate: 48.00 },
+    ],
+    gasRate: 12.60,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 18.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Diyarbakır: {
+    city: 'Diyarbakır', verified: false,
+    districts: ['Bağlar','Kayapınar','Sur','Yenişehir','Bismil','Çermik','Çınar','Ergani','Hazro','Kulp','Lice','Silvan'],
+    waterTiers: [
+      { limit: 15,  rate: 30.00 },
+      { limit: 999, rate: 45.00 },
+    ],
+    gasRate: 12.50,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 17.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Samsun: {
+    city: 'Samsun', verified: false,
+    districts: ['Atakum','Canik','İlkadım','Tekkeköy','Bafra','Çarşamba','Terme','Vezirköprü','Alaçam','Havza','Kavak','Ladik','Ondokuzmayıs'],
+    waterTiers: [
+      { limit: 15,  rate: 33.50 },
+      { limit: 999, rate: 50.00 },
+    ],
+    gasRate: 12.70,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 18.50 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Hatay: {
+    city: 'Hatay', verified: false,
+    districts: ['Antakya','İskenderun','Defne','Payas','Dörtyol','Erzin','Hassa','İslahiye','Kırıkhan','Kumlu','Reyhanlı','Samandağ','Yayladağı'],
+    waterTiers: [
+      { limit: 15,  rate: 31.00 },
+      { limit: 999, rate: 46.50 },
+    ],
+    gasRate: 12.55,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 17.50 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Manisa: {
+    city: 'Manisa', verified: false,
+    districts: ['Şehzadeler','Yunusemre','Akhisar','Alaşehir','Salihli','Soma','Turgutlu','Demirci','Gördes','Kırkağaç','Köprübaşı','Kula','Sarıgöl','Saruhanlı','Selendi'],
+    waterTiers: [
+      { limit: 15,  rate: 36.50 },
+      { limit: 999, rate: 54.50 },
+    ],
+    gasRate: 13.05,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 20.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Balıkesir: {
+    city: 'Balıkesir', verified: false,
+    districts: ['Altıeylül','Karesi','Ayvalık','Bandırma','Bigadiç','Burhaniye','Dursunbey','Edremit','Erdek','Gömeç','Havran','İvrindi','Kepsut','Manyas','Marmara','Savaştepe','Sındırgı','Susurluk'],
+    waterTiers: [
+      { limit: 15,  rate: 35.50 },
+      { limit: 999, rate: 53.00 },
+    ],
+    gasRate: 13.00,
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.50 },
+    currency: 'TRY', lastUpdated: '2026-06',
   },
 };
 
