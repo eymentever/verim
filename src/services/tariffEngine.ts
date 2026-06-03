@@ -312,14 +312,14 @@ export const DEFAULT_TARIFF: CityTariffConfig = {
     { limit: 15,  rate: 30.00 },   // 0-15 m³
     { limit: 999, rate: 45.00 },   // 15+ m³
   ],
-  gasRate: 9.00,
+  gasRate: 13.00,  // EPDK 2026 Türkiye konut ortalaması
   taxes: {
     kdv: 0.10,
     ctv: 0.02,
     abonelikUcreti: 20.00,
   },
   currency: 'TRY',
-  lastUpdated: '2026-01',
+  lastUpdated: '2026-06',
 };
 
 export function getCityConfig(city: string): CityTariffConfig {

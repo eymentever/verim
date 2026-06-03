@@ -135,12 +135,12 @@ export function getRecommendations(logs: ConsumptionLog[]): Recommendation[] {
 
   const avgRecent = (type: 'water' | 'gas') => {
     const filtered = recent.filter((l) => l.type === type);
-    return filtered.length ? filtered.reduce((s, l) => s + l.indexValue, 0) / filtered.length : 0;
+    return filtered.length ? filtered.reduce((s, l) => s + l.consumption, 0) / filtered.length : 0;
   };
 
   const avgHistorical = (type: 'water' | 'gas') => {
     const filtered = historical.filter((l) => l.type === type);
-    return filtered.length ? filtered.reduce((s, l) => s + l.indexValue, 0) / filtered.length : 0;
+    return filtered.length ? filtered.reduce((s, l) => s + l.consumption, 0) / filtered.length : 0;
   };
 
   const waterRatio = avgHistorical('water') > 0 ? avgRecent('water') / avgHistorical('water') : 1;
