@@ -98,15 +98,15 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
   },
 
   Sakarya: {
-    city: 'Sakarya',
+    city: 'Sakarya', verified: true,
     districts: [
       'Adapazarı', 'Akyazı', 'Arifiye', 'Erenler', 'Ferizli', 'Geyve',
       'Hendek', 'Karapürçek', 'Karasu', 'Kaynarca', 'Kocaali', 'Pamukova',
       'Sapanca', 'Serdivan', 'Söğütlü', 'Taraklı'
     ],
     waterTiers: [
-      { limit: 15,  rate: 42.77 },   // SASKİ 2026 Konut 1 (su + atıksu)
-      { limit: Number.MAX_SAFE_INTEGER, rate: 60.00 },   // 15+ m³
+      { limit: 15,  rate: 42.77 },   // SASKİ 2026 Konut 1 (su+atıksu), merkez ilçeler
+      { limit: Number.MAX_SAFE_INTEGER, rate: 60.00 },   // 15+ m³ tahmini
     ],
     gasRate: 13.00,   // AGDAŞ / Aksa 2026 konut tarifesi (₺/m³)
     taxes: {
@@ -303,6 +303,140 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.50 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
+  // ── Eksik 11 Büyükşehir (2026-06) ──────────────────────────────────────────
+
+  Şanlıurfa: {
+    city: 'Şanlıurfa', verified: true,
+    districts: ['Haliliye','Eyyübiye','Karaköprü','Siverek','Bozova','Ceylanpınar','Viranşehir','Akçakale','Birecik','Halfeti','Harran','Hilvan','Suruç'],
+    waterTiers: [
+      { limit: 15,  rate: 44.21 },   // ŞUSKİ 2026 (su+atıksu)
+      { limit: Number.MAX_SAFE_INTEGER, rate: 66.30 },   // 15+ m³
+    ],
+    gasRate: 12.45,   // ŞUSKİ / ENERYA 2026 (₺/m³)
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 18.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Aydın: {
+    city: 'Aydın', verified: false,
+    districts: ['Efeler','Nazilli','Söke','Kuşadası','Didim','Germencik','İncirliova','Karpuzlu','Köşk','Bozdoğan','Buharkent','Çine','Karacasu','Koçarlı','Sultanhisar','Yenipazar'],
+    waterTiers: [
+      { limit: 15,  rate: 38.00 },   // AYSKİ tahmini 2026
+      { limit: Number.MAX_SAFE_INTEGER, rate: 58.00 },
+    ],
+    gasRate: 13.00,   // BATIGAS/AYDINGAZ 2026
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Denizli: {
+    city: 'Denizli', verified: false,
+    districts: ['Merkezefendi','Pamukkale','Acıpayam','Babadağ','Baklan','Bekilli','Beyağaç','Bozkurt','Buldan','Çal','Çameli','Çardak','Çivril','Güney','Honaz','Kale','Sarayköy','Serinhisar','Tavas'],
+    waterTiers: [
+      { limit: 15,  rate: 36.00 },   // DESKİ tahmini 2026
+      { limit: Number.MAX_SAFE_INTEGER, rate: 55.00 },
+    ],
+    gasRate: 12.90,   // DENGAZ 2026
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Tekirdağ: {
+    city: 'Tekirdağ', verified: false,
+    districts: ['Süleymanpaşa','Çorlu','Çerkezköy','Kapaklı','Ergene','Hayrabolu','Malkara','Marmara Ereğlisi','Muratlı','Saray','Şarköy'],
+    waterTiers: [
+      { limit: 15,  rate: 45.00 },   // TESKİ tahmini 2026 (listede 2. pahalı)
+      { limit: Number.MAX_SAFE_INTEGER, rate: 68.00 },
+    ],
+    gasRate: 13.30,   // TEGAZ/BOTAŞ bölge 2026
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 21.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Muğla: {
+    city: 'Muğla', verified: false,
+    districts: ['Menteşe','Bodrum','Fethiye','Marmaris','Milas','Dalaman','Datça','Kavaklidere','Kavaklıdere','Köyceğiz','Ortaca','Seydikemer','Ula','Yatağan'],
+    waterTiers: [
+      { limit: 15,  rate: 44.00 },   // MUSKİ tahmini 2026 (listede 4. pahalı)
+      { limit: Number.MAX_SAFE_INTEGER, rate: 67.00 },
+    ],
+    gasRate: 12.80,   // MUGLAGAZ 2026
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 20.50 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Mardin: {
+    city: 'Mardin', verified: false,
+    districts: ['Artuklu','Kızıltepe','Midyat','Nusaybin','Derik','Dargeçit','Mazıdağı','Ömerli','Savur','Yeşilli'],
+    waterTiers: [
+      { limit: 15,  rate: 18.00 },   // MARSU 2026 (en ucuz büyükşehir ~18 TL toplam)
+      { limit: Number.MAX_SAFE_INTEGER, rate: 28.00 },
+    ],
+    gasRate: 12.30,   // Mardin GAZ 2026
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 16.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Kahramanmaraş: {
+    city: 'Kahramanmaraş', verified: false,
+    districts: ['Dulkadiroğlu','Onikişubat','Afşin','Andırın','Çağlayancerit','Ekinözü','Elbistan','Göksun','Nurhak','Pazarcık','Türkoğlu'],
+    waterTiers: [
+      { limit: 15,  rate: 30.00 },   // KASKİ tahmini 2026
+      { limit: Number.MAX_SAFE_INTEGER, rate: 46.00 },
+    ],
+    gasRate: 12.55,   // KAHRAMANGAZ 2026
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 17.50 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Van: {
+    city: 'Van', verified: false,
+    districts: ['İpekyolu','Tuşba','Edremit','Çaldıran','Çatak','Erciş','Gevaş','Gürpınar','Muradiye','Özalp','Saray'],
+    waterTiers: [
+      { limit: 15,  rate: 25.00 },   // VANSKİ tahmini 2026
+      { limit: Number.MAX_SAFE_INTEGER, rate: 38.00 },
+    ],
+    gasRate: 12.20,   // VANGAS 2026
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 15.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Malatya: {
+    city: 'Malatya', verified: false,
+    districts: ['Battalgazi','Yeşilyurt','Akçadağ','Arapgir','Arguvan','Darende','Doğanyol','Doğanşehir','Hekimhan','Kale','Kuluncak','Pütürge','Yazıhan'],
+    waterTiers: [
+      { limit: 15,  rate: 32.00 },   // MASKİ tahmini 2026
+      { limit: Number.MAX_SAFE_INTEGER, rate: 50.00 },
+    ],
+    gasRate: 12.60,   // MALATYAGAZ 2026
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 18.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Erzurum: {
+    city: 'Erzurum', verified: false,
+    districts: ['Yakutiye','Palandöken','Aziziye','Aşkale','Çat','Hınıs','Horasan','İspir','Karaçoban','Karayazı','Köprüköy','Narman','Oltu','Olur','Pazaryolu','Şenkaya','Tekman','Tortum','Uzundere'],
+    waterTiers: [
+      { limit: 15,  rate: 28.00 },   // ESKİ tahmini 2026
+      { limit: Number.MAX_SAFE_INTEGER, rate: 42.00 },
+    ],
+    gasRate: 12.40,   // ERGAS 2026
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 16.50 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
+  Ordu: {
+    city: 'Ordu', verified: false,
+    districts: ['Altınordu','Fatsa','Ünye','Akkuş','Aybastı','Çamaş','Çatalpınar','Çaybaşı','Gölköy','Gülyalı','Gürgentepe','İkizce','Kabadüz','Kabataş','Korgan','Kumru','Mesudiye','Perşembe','Ulubey'],
+    waterTiers: [
+      { limit: 15,  rate: 30.00 },   // OSKİ tahmini 2026
+      { limit: Number.MAX_SAFE_INTEGER, rate: 46.00 },
+    ],
+    gasRate: 12.55,   // ORDUGAZ/ENERYA 2026
+    taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 17.00 },
+    currency: 'TRY', lastUpdated: '2026-06',
+  },
+
 };
 
 export const DEFAULT_TARIFF: CityTariffConfig = {
