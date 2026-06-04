@@ -35,9 +35,9 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       'Üsküdar', 'Zeytinburnu',
     ],
     waterTiers: [
-      { limit: 15,  rate: 44.50 },   // 0-15 m³
-      { limit: 30,  rate: 68.20 },   // 15-30 m³
-      { limit: Number.MAX_SAFE_INTEGER, rate: 89.80 },   // 30+ m³
+      { limit: 15,  rate: 42.37 },   // 0-15 m³  (İSKİ 2026 su+atıksu)
+      { limit: 30,  rate: 64.58 },   // 15-30 m³
+      { limit: Number.MAX_SAFE_INTEGER, rate: 93.40 },   // 30+ m³
     ],
     gasRate: 13.45,   // İGDAŞ 2026 konut tarifesi (₺/m³)
     taxes: {
@@ -58,9 +58,9 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       'Polatlı', 'Pursaklar', 'Sincan', 'Şereflikoçhisar', 'Yenimahalle',
     ],
     waterTiers: [
-      { limit: 15,  rate: 58.40 },   // 0-15 m³
-      { limit: 30,  rate: 75.00 },   // 15-30 m³
-      { limit: Number.MAX_SAFE_INTEGER, rate: 92.00 },   // 30+ m³
+      { limit: 15,  rate: 52.94 },   // 0-15 m³  (ASKİ 2026 su+atıksu)
+      { limit: 30,  rate: 124.11 },  // 15-30 m³ (ASKİ 2026 yeni kademeli)
+      { limit: Number.MAX_SAFE_INTEGER, rate: 206.85 }, // 30+ m³
     ],
     gasRate: 12.80,  // BAŞKENTGAZ 2026 konut tarifesi (₺/m³)
     taxes: {
