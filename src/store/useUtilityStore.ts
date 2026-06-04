@@ -74,7 +74,9 @@ export function getBillBreakdown(
   const discountFactor = district ? getDistrictWaterMultiplier(city, district) : 1.0;
 
   if (type === 'water') {
-    let remaining = consumption;
+    // İnsani su hakkı: ücretsiz m³ çıkar (İSKİ vb.)
+    const freeM3 = config.humanWaterRightM3 ?? 0;
+    let remaining = Math.max(0, consumption - freeM3);
     let rawTariff = 0;
     let prevLimit = 0;
 

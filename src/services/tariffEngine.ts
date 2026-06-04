@@ -15,6 +15,8 @@ export interface CityTariffConfig {
   waterTiers: TariffTier[];    // kademeli su tarifeleri
   /** true = resmi tarife doğrulandı, false = belediye verisi bekleniyor (tahmini) */
   verified?: boolean;
+  /** Aylık ücretsiz su miktarı (m³) — insani su hakkı, sosyal tarife vb. */
+  humanWaterRightM3?: number;
   gasRate: number;              // düz ₺/m³ (IGDAS/GAZDAŞ vb. değişkeni)
   gasTiers?: TariffTier[];      // opsiyonel kademeli gaz
   taxes: TaxMultipliers;
@@ -40,6 +42,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: Number.MAX_SAFE_INTEGER, rate: 93.40 },   // 30+ m³
     ],
     gasRate: 11.15,   // İGDAŞ 2026 konut (KDV hariç base, ÖTV+KDV ayrı eklenir)
+    humanWaterRightM3: 3,   // İSKİ 2026: her ay 3 m³ ücretsiz (insani su hakkı)
     taxes: {
       kdv: 0.10,
       ctv: 0.02,
@@ -523,6 +526,10 @@ export function calculateWaterCost(
 
   // İlçe bazlı resmi katsayı çarpanı
   const discountFactor = district ? getDistrictWaterMultiplier(city, district) : 1.0;
+  // İnsani su hakkı: ücretsiz m³'ü çıkar (İSKİ vb.)
+  const freeM3 = config.humanWaterRightM3 ?? 0;
+  const billableConsumption = Math.max(0, consumption - freeM3);
+  remaining = billableConsumption;
 
   for (const tier of config.waterTiers) {
     if (remaining <= 0) break;
