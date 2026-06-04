@@ -35,7 +35,7 @@ function ProductCard({
       `${product.brand} — ₺${product.price.toFixed(0)}\n\nTahmini yıllık tasarruf: ₺${product.savingsPerYear}\n\nPartner sitemize yönlendirileceksiniz.`,
       [
         { text: 'İptal', style: 'cancel' },
-        { text: 'İncele →', onPress: () => Linking.openURL(product.affiliateUrl) },
+        { text: 'İncele →', onPress: () => Linking.openURL(product.affiliateUrl).catch(() => {}) },
       ]
     );
   };

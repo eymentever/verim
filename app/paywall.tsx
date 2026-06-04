@@ -106,6 +106,8 @@ export default function PaywallScreen() {
         } else {
           Alert.alert('Hata', result.error ?? 'Satın alma başarısız.');
         }
+      }).catch(() => {
+        Alert.alert('Hata', 'Satın alma sırasında bir sorun oluştu.');
       });
     } else {
       // Fallback: doğrudan upgrade
@@ -156,11 +158,15 @@ export default function PaywallScreen() {
 
         {/* Satın almaları geri yükle */}
         <TouchableOpacity style={s.restoreBtn} onPress={async () => {
-          const result = await restore();
-          if (result.success && result.tier) {
-            Alert.alert('✅ Geri Yüklendi', `${result.tier} planınız aktive edildi.`, [{ text: 'Harika!', onPress: () => router.back() }]);
-          } else {
-            Alert.alert('Bilgi', 'Aktif abonelik bulunamadı.');
+          try {
+            const result = await restore();
+            if (result.success && result.tier) {
+              Alert.alert('✅ Geri Yüklendi', `${result.tier} planınız aktive edildi.`, [{ text: 'Harika!', onPress: () => router.back() }]);
+            } else {
+              Alert.alert('Bilgi', 'Aktif abonelik bulunamadı.');
+            }
+          } catch {
+            Alert.alert('Hata', 'Geri yükleme sırasında bir sorun oluştu.');
           }
         }}>
           <Text style={s.restoreText}>Satın almaları geri yükle</Text>

@@ -296,7 +296,8 @@ export default function ScanScreen() {
 
   // ── Manuel Giriş ──────────────────────────────────────────────────────────
   const handleManualSubmit = useCallback(async () => {
-    const trimmed = manualInput.trim().replace(',', '.');
+    // Türkçe format: binlik ayırıcı '.' → sil, ondalık ',' → '.'
+    const trimmed = manualInput.trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
     const val     = parseFloat(trimmed);
 
     if (!trimmed || isNaN(val) || val <= 0) {

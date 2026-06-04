@@ -37,7 +37,7 @@ export default function RootLayout() {
 
   // RevenueCat + Bildirim kanalları başlat, splash'ı kapat
   useEffect(() => {
-    initRevenueCat();
+    initRevenueCat().catch(() => {});
     setupNotificationChannels().catch(() => {});
     SplashScreen.hideAsync().catch(() => {});
 

@@ -256,7 +256,7 @@ export default function Dashboard() {
         )}
 
         {/* ── Free: Scan Limiti ──────────────────────── */}
-        {subStore.tier === 'free' && (
+        {plan.maxScansPerMonth > 0 && (  // free veya expired pro
           <View style={s.limitCard}>
             <Text style={s.limitTitle}>Bu Ay Kalan Tarama</Text>
             <View style={s.limitRow}>

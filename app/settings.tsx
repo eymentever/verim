@@ -10,7 +10,7 @@ import { useUtilityStore, Property, getBillBreakdown } from '../src/store/useUti
 import { useSubscriptionStore, PLANS } from '../src/store/useSubscriptionStore';
 import { generateHandoverPDF } from '../src/services/pdfReportService';
 import { usePrepaidMeter } from '../src/hooks/usePrepaidMeter';
-import { getDistricts, getCityConfig } from '../src/services/tariffEngine';
+import { getDistricts, getCityConfig, getAllCities } from '../src/services/tariffEngine';
 import { auditWaterBill } from '../src/services/waterIntelligenceService';
 import { auditBill as auditGasBill } from '../src/services/gasIntelligenceService';
 import { scheduleMonthlyReminder, cancelMonthlyReminder } from '../src/services/notificationService';
@@ -163,7 +163,7 @@ export default function SettingsScreen() {
 
   const handleDevir = async () => {
     if (!prop) { Alert.alert('Mülk Yok', 'Önce setup ekranından bir mülk ekleyin.'); return; }
-    if (tier === 'free') { router.push('/paywall'); return; }
+    if (!subStore.isActive() || tier === 'free') { router.push('/paywall'); return; }
     setGenPDF(true);
     try {
       const result = await generateHandoverPDF({
@@ -432,7 +432,7 @@ export default function SettingsScreen() {
           )}
 
           <TouchableOpacity
-            style={[s.devirBtn, { backgroundColor: C.brand }, (tier === 'free' || genPDF) && { opacity: 0.35 }]}
+            style={[s.devirBtn, { backgroundColor: C.brand }, (!subStore.isActive() || tier === 'free' || genPDF) && { opacity: 0.35 }]}
             onPress={handleDevir}
             disabled={tier === 'free' || genPDF}
           >
@@ -634,7 +634,8 @@ export default function SettingsScreen() {
 
             {editField === 'city' && (
               <View style={{ gap: 10, marginVertical: 12 }}>
-                {['İstanbul', 'Ankara', 'İzmir', 'Sakarya'].map(c => (
+                <ScrollView style={{ maxHeight: 220 }} nestedScrollEnabled>
+                {getAllCities().map(c => (
                   <TouchableOpacity
                     key={c}
                     style={[s.modalRowBtn, editValue === c && s.modalRowBtnActive]}
@@ -644,6 +645,7 @@ export default function SettingsScreen() {
                     {editValue === c && <Check size={16} color={C.water} strokeWidth={3} />}
                   </TouchableOpacity>
                 ))}
+                </ScrollView>
               </View>
             )}
 
