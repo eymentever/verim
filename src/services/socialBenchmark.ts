@@ -29,7 +29,7 @@ export const CITY_AVERAGES: Record<string, CityAverage> = {
   Balıkesir:  { city: 'Balıkesir',  avgMonthlyWater: 7.5,  avgMonthlyGas: 26.0, avgMonthlyCost: 695, sampleSize: 4000 },
   Hatay:      { city: 'Hatay',      avgMonthlyWater: 7.9,  avgMonthlyGas: 21.0, avgMonthlyCost: 665, sampleSize: 3500 },
   Trabzon:    { city: 'Trabzon',    avgMonthlyWater: 7.7,  avgMonthlyGas: 28.0, avgMonthlyCost: 705, sampleSize: 3000 },
-  Genel:      { city: 'Genel',      avgMonthlyWater: 7.8,  avgMonthlyGas: 27.0, avgMonthlyCost: 720, sampleSize: 1000 },
+  Genel:         { city: 'Genel',         avgMonthlyWater: 7.8,  avgMonthlyGas: 27.0, avgMonthlyCost: 720, sampleSize: 1000 },
   Şanlıurfa:     { city: 'Şanlıurfa',     avgMonthlyWater: 7.5,  avgMonthlyGas: 22.0, avgMonthlyCost: 630, sampleSize: 2500 },
   Aydın:         { city: 'Aydın',         avgMonthlyWater: 8.2,  avgMonthlyGas: 20.0, avgMonthlyCost: 660, sampleSize: 2800 },
   Denizli:       { city: 'Denizli',       avgMonthlyWater: 7.6,  avgMonthlyGas: 25.0, avgMonthlyCost: 650, sampleSize: 2200 },
@@ -71,4 +71,45 @@ export function calculateBenchmark(
 
   const userWater = thisMonth.filter((l) => l.type === 'water').reduce((s, l) => s + l.consumption, 0);
   const userGas   = thisMonth.filter((l) => l.type === 'gas').reduce((s, l) => s + l.consumption, 0);
-  const userCost  = thisMonth.reduce((s
+  const userCost  = thisMonth.reduce((s, l) => s + l.cost, 0);
+
+  if (userCost === 0) return null;
+
+  const savingsPercent = Math.round(((avg.avgMonthlyCost - userCost) / avg.avgMonthlyCost) * 100);
+  const waterDiff = avg.avgMonthlyWater > 0
+    ? Math.round(((userWater - avg.avgMonthlyWater) / avg.avgMonthlyWater) * 100)
+    : 0;
+  const gasDiff = avg.avgMonthlyGas > 0
+    ? Math.round(((userGas - avg.avgMonthlyGas) / avg.avgMonthlyGas) * 100)
+    : 0;
+
+  let badge: string;
+  let message: string;
+
+  if (savingsPercent >= 20) {
+    badge = '🏆 Enerji Şampiyonu';
+    message = `Hemşehrilerinizden %${savingsPercent} daha tasarruflusunuz! Olağanüstü.`;
+  } else if (savingsPercent >= 5) {
+    badge = '🌿 Çevre Dostu';
+    message = `${city} ortalamasının %${savingsPercent} altındasınız. Harika gidiyorsunuz.`;
+  } else if (savingsPercent >= -10) {
+    badge = '⚖️ Ortalama';
+    message = `Tüketiminiz ${city} ortalamasıyla uyumlu. Biraz daha tasarruf edebilirsiniz.`;
+  } else {
+    badge = '📈 İyileştirme Gerekli';
+    message = `Hemşehrilerinizden %${Math.abs(savingsPercent)} daha fazla harcıyorsunuz. Marketplace önerilerimize bakın.`;
+  }
+
+  return {
+    city,
+    userMonthlyWater: userWater,
+    userMonthlyGas: userGas,
+    userMonthlyCost: userCost,
+    cityAvgCost: avg.avgMonthlyCost,
+    savingsPercent,
+    waterDiffPercent: waterDiff,
+    gasDiffPercent: gasDiff,
+    badge,
+    message,
+  };
+}
