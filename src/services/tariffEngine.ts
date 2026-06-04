@@ -61,9 +61,9 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       'Polatlı', 'Pursaklar', 'Sincan', 'Şereflikoçhisar', 'Yenimahalle',
     ],
     waterTiers: [
-      { limit: 15,  rate: 52.94 },   // 0-15 m³  (ASKİ 2026 su+atıksu)
-      { limit: 30,  rate: 124.11 },  // 15-30 m³ (ASKİ 2026 yeni kademeli)
-      { limit: Number.MAX_SAFE_INTEGER, rate: 206.85 }, // 30+ m³
+      { limit: 15,  rate: 52.94 },   // 0-15 m³  (ASKİ 04.05.2026 resmi PDF)
+      { limit: 30,  rate: 80.50 },   // 15-30 m³ (tahmini ~1.52×)
+      { limit: Number.MAX_SAFE_INTEGER, rate: 116.50 }, // 30+ m³ (tahmini ~2.2×)
     ],
     gasRate: 12.71,  // BAŞKENTGAZ 2026 konut (KDV hariç)
     taxes: {
