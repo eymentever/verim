@@ -26,7 +26,7 @@ export interface ValidationResult {
 
 // ── Sabitler ──────────────────────────────────────────────────────────────────
 
-const WATER_SPIKE_PER_DAY = 10;  // m³/gün anomali eşiği
+const WATER_SPIKE_PER_DAY = 3;   // m³/gün anomali eşiği (konut ~0.88 m³/gün normal)
 const GAS_SPIKE_PER_DAY   = 50;  // m³/gün anomali eşiği
 
 // ── Regex filtreleri ──────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ const GAS_SPIKE_PER_DAY   = 50;  // m³/gün anomali eşiği
  * Su — siyah tekerlekler: ondalık ayırıcı öncesi 5–7 rakam.
  * Kırmızı/ondalık bölüm kasıtlı olarak kesilir.
  */
-const WATER_REGEX = /^(\d{5,7})$/;
+const WATER_REGEX = /^(\d{5,8})$/;  // 8 hane: 00043817 gibi sıfır padded sayaçlar
 
 /**
  * Gaz — ana gösterge: ondalık ayırıcı öncesi 5–8 rakam.

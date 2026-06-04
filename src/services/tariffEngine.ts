@@ -39,7 +39,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 30,  rate: 64.58 },   // 15-30 m³
       { limit: Number.MAX_SAFE_INTEGER, rate: 93.40 },   // 30+ m³
     ],
-    gasRate: 13.45,   // İGDAŞ 2026 konut tarifesi (₺/m³)
+    gasRate: 11.15,   // İGDAŞ 2026 konut (KDV hariç base, ÖTV+KDV ayrı eklenir)
     taxes: {
       kdv: 0.10,
       ctv: 0.02,
@@ -62,7 +62,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 30,  rate: 124.11 },  // 15-30 m³ (ASKİ 2026 yeni kademeli)
       { limit: Number.MAX_SAFE_INTEGER, rate: 206.85 }, // 30+ m³
     ],
-    gasRate: 12.80,  // BAŞKENTGAZ 2026 konut tarifesi (₺/m³)
+    gasRate: 12.71,  // BAŞKENTGAZ 2026 konut (KDV hariç)
     taxes: {
       kdv: 0.10,
       ctv: 0.02,
@@ -87,7 +87,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 40,  rate: 99.83 },   // 20-40 m³
       { limit: Number.MAX_SAFE_INTEGER, rate: 145.00 },  // 40+ m³
     ],
-    gasRate: 13.10,  // İZMİRGAZ 2026 konut tarifesi (₺/m³)
+    gasRate: 13.66,  // İZMİRGAZ 2026 konut (KDV hariç)
     taxes: {
       kdv: 0.10,
       ctv: 0.02,
@@ -108,7 +108,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 42.77 },   // SASKİ 2026 Konut 1 (su+atıksu), merkez ilçeler
       { limit: Number.MAX_SAFE_INTEGER, rate: 60.00 },   // 15+ m³ tahmini
     ],
-    gasRate: 13.00,   // AGDAŞ / Aksa 2026 konut tarifesi (₺/m³)
+    gasRate: 12.32,  // AGDAŞ 2026 konut (KDV hariç)
     taxes: {
       kdv: 0.10,
       ctv: 0.02,
@@ -128,7 +128,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 30,  rate: 62.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 85.00 },
     ],
-    gasRate: 13.20,
+    gasRate: 11.57,  // BURSAGAZ 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 22.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -141,7 +141,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 30,  rate: 57.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 78.00 },
     ],
-    gasRate: 13.30,
+    gasRate: 15.40,  // ENERYA/ASAT 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 21.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -154,7 +154,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 30,  rate: 65.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 88.00 },
     ],
-    gasRate: 13.45,
+    gasRate: 12.41,  // İZGAZ 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 23.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -166,7 +166,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 35.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 52.00 },
     ],
-    gasRate: 12.90,
+    gasRate: 12.14,  // ENERYA 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -178,7 +178,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 33.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 50.00 },
     ],
-    gasRate: 12.70,
+    gasRate: 11.12,  // GAZDAŞ 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 18.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -190,7 +190,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 34.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 51.00 },
     ],
-    gasRate: 12.80,
+    gasRate: 16.21,  // AKSA Adana 2026 (KDV hariç, AKSA yüksek tarife)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -202,7 +202,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 34.50 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 51.50 },
     ],
-    gasRate: 12.85,
+    gasRate: 16.21,  // AKSA Mersin 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.50 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -215,7 +215,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 30,  rate: 55.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 74.00 },
     ],
-    gasRate: 13.10,
+    gasRate: 12.25,  // ESGAZ 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 20.50 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -227,7 +227,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 36.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 54.00 },
     ],
-    gasRate: 13.00,
+    gasRate: 12.94,  // KAYSERİGAZ 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 20.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -239,7 +239,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 32.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 48.00 },
     ],
-    gasRate: 12.60,
+    gasRate: 12.74,  // AKSA Trabzon 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 18.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -251,7 +251,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 30.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 45.00 },
     ],
-    gasRate: 12.50,
+    gasRate: 12.42,  // DİYARGAZ 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 17.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -263,7 +263,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 33.50 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 50.00 },
     ],
-    gasRate: 12.70,
+    gasRate: 11.37,  // SAMGAZ 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 18.50 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -275,7 +275,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 31.00 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 46.50 },
     ],
-    gasRate: 12.55,
+    gasRate: 16.21,  // AKSA Hatay 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 17.50 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -287,7 +287,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 36.50 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 54.50 },
     ],
-    gasRate: 13.05,
+    gasRate: 12.62,  // AKSA Manisa 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 20.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -299,7 +299,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 35.50 },
       { limit: Number.MAX_SAFE_INTEGER, rate: 53.00 },
     ],
-    gasRate: 13.00,
+    gasRate: 13.26,  // AKSA Balıkesir 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.50 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -312,7 +312,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 44.21 },   // ŞUSKİ 2026 (su+atıksu)
       { limit: Number.MAX_SAFE_INTEGER, rate: 66.30 },   // 15+ m³
     ],
-    gasRate: 12.45,   // ŞUSKİ / ENERYA 2026 (₺/m³)
+    gasRate: 12.79,  // AKSA Şanlıurfa 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 18.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -324,7 +324,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 38.00 },   // AYSKİ tahmini 2026
       { limit: Number.MAX_SAFE_INTEGER, rate: 58.00 },
     ],
-    gasRate: 13.00,   // BATIGAS/AYDINGAZ 2026
+    gasRate: 13.90,  // ENERYA Aydın 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -336,7 +336,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 36.00 },   // DESKİ tahmini 2026
       { limit: Number.MAX_SAFE_INTEGER, rate: 55.00 },
     ],
-    gasRate: 12.90,   // DENGAZ 2026
+    gasRate: 12.57,  // ENERYA Denizli 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 19.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -348,7 +348,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 45.00 },   // TESKİ tahmini 2026 (listede 2. pahalı)
       { limit: Number.MAX_SAFE_INTEGER, rate: 68.00 },
     ],
-    gasRate: 13.30,   // TEGAZ/BOTAŞ bölge 2026
+    gasRate: 11.92,  // GAZDAŞ Tekirdağ 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 21.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -360,7 +360,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 44.00 },   // MUSKİ tahmini 2026 (listede 4. pahalı)
       { limit: Number.MAX_SAFE_INTEGER, rate: 67.00 },
     ],
-    gasRate: 12.80,   // MUGLAGAZ 2026
+    gasRate: 14.85,  // AKMERCAN Muğla 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 20.50 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -372,7 +372,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 18.00 },   // MARSU 2026 (en ucuz büyükşehir ~18 TL toplam)
       { limit: Number.MAX_SAFE_INTEGER, rate: 28.00 },
     ],
-    gasRate: 12.30,   // Mardin GAZ 2026
+    gasRate: 15.39,  // AKMERCAN Mardin 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 16.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -384,7 +384,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 30.00 },   // KASKİ tahmini 2026
       { limit: Number.MAX_SAFE_INTEGER, rate: 46.00 },
     ],
-    gasRate: 12.55,   // KAHRAMANGAZ 2026
+    gasRate: 14.72,  // ARMADAŞ Kahramanmaraş 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 17.50 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -396,7 +396,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 25.00 },   // VANSKİ tahmini 2026
       { limit: Number.MAX_SAFE_INTEGER, rate: 38.00 },
     ],
-    gasRate: 12.20,   // VANGAS 2026
+    gasRate: 11.18,  // AKSA Van 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 15.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -408,7 +408,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 32.00 },   // MASKİ tahmini 2026
       { limit: Number.MAX_SAFE_INTEGER, rate: 50.00 },
     ],
-    gasRate: 12.60,   // MALATYAGAZ 2026
+    gasRate: 14.06,  // AKSA Malatya 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 18.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -420,7 +420,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 28.00 },   // ESKİ tahmini 2026
       { limit: Number.MAX_SAFE_INTEGER, rate: 42.00 },
     ],
-    gasRate: 12.40,   // ERGAS 2026
+    gasRate: 15.62,  // PALEN Erzurum 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 16.50 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -432,7 +432,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
       { limit: 15,  rate: 30.00 },   // OSKİ tahmini 2026
       { limit: Number.MAX_SAFE_INTEGER, rate: 46.00 },
     ],
-    gasRate: 12.55,   // ORDUGAZ/ENERYA 2026
+    gasRate: 13.29,  // AKSA Ordu 2026 (KDV hariç)
     taxes: { kdv: 0.10, ctv: 0.02, abonelikUcreti: 17.00 },
     currency: 'TRY', lastUpdated: '2026-06',
   },
@@ -446,7 +446,7 @@ export const DEFAULT_TARIFF: CityTariffConfig = {
     { limit: 15,  rate: 30.00 },   // 0-15 m³
     { limit: Number.MAX_SAFE_INTEGER, rate: 45.00 },   // 15+ m³
   ],
-  gasRate: 13.00,  // EPDK 2026 Türkiye konut ortalaması
+  gasRate: 12.50,  // EPDK 2026 Türkiye konut ortalaması (KDV hariç)
   taxes: {
     kdv: 0.10,
     ctv: 0.02,
