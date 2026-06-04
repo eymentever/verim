@@ -123,6 +123,10 @@ export default function ScanScreen() {
   const [meterType,    setMeterType]    = useState<MeterType>(
     params.type === 'gas' ? 'gas' : 'water'
   );
+  // params değişince (deep link veya farklı FAB) meterType'ı güncelle
+  React.useEffect(() => {
+    setMeterType(params.type === 'gas' ? 'gas' : 'water');
+  }, [params.type]);
   const [mode,         setMode]         = useState<ScanMode>('manual');
   const [phase,        setPhase]        = useState<ScanPhase>('idle');
   const [torchOn,      setTorchOn]      = useState(false);

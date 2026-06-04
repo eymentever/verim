@@ -113,6 +113,8 @@ interface SubscriptionState {
 
   // Computed helpers
   currentPlan: () => SubscriptionPlan;
+  /** Abonelik süresi dolduysa free plan döner — feature flag için kullan */
+  effectivePlan: () => SubscriptionPlan;
   monthlyScanCount: (type: 'water' | 'gas') => number;
   canScan: (type: 'water' | 'gas') => boolean;
   incrementScan: (type: 'water' | 'gas') => void;
@@ -134,6 +136,12 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       scanUsage: [],
 
       currentPlan: () => PLANS[get().tier],
+
+      effectivePlan: () => {
+        const { tier } = get();
+        if (tier === 'free') return PLANS['free'];
+        return get().isActive() ? PLANS[tier] : PLANS['free'];
+      },
 
       monthlyScanCount: (type) => {
         const key = currentMonthKey();

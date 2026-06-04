@@ -91,8 +91,8 @@ export default function Dashboard() {
   const subStore = useSubscriptionStore();
 
   const { profile, properties, activePropertyId } = store;
-  const plan   = subStore.currentPlan();
-  const isPro  = subStore.tier !== 'free';
+  const plan   = subStore.effectivePlan();   // expiry kontrolü dahil
+  const isPro  = subStore.isActive() && subStore.tier !== 'free';
 
   const activeProp = properties.find(p => p.id === activePropertyId);
   const city       = activeProp?.city ?? profile.city ?? 'İstanbul';

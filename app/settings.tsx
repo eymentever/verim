@@ -72,7 +72,7 @@ export default function SettingsScreen() {
   const subStore = useSubscriptionStore();
 
   const prop = store.activeProperty();
-  const plan = subStore.currentPlan();
+  const plan = subStore.effectivePlan();
   const tier = subStore.tier;
   const tierColor = TIER_COLOR[tier] ?? C.textDim;
 

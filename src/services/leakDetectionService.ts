@@ -88,7 +88,7 @@ export function analyzeConsumption(logs: ConsumptionLog[]): AnomalyReport {
       score: maxScore,
       affectedType,
       title: '🚨 Kritik Tüketim Artışı',
-      description: `${affectedType === 'water' ? 'Su' : affectedType === 'gas' ? 'Doğalgaz' : 'Su ve Doğalgaz'} tüketiminiz geçen aylara kıyasla %${Math.round(maxScore)}+ arttı. Kaçak olabilir.`,
+      description: `${affectedType === 'water' ? 'Su' : affectedType === 'gas' ? 'Doğalgaz' : 'Su ve Doğalgaz'} tüketiminiz geçen aylara kıyasla anormal biçimde yüksek. Kaçak veya sızıntı şüphesi var.`,
       recommendation: 'Gece saatlerinde tüm musluklarınızı kapatıp sayacı kontrol edin. Gerekirse bir tesisatçı çağırın.',
     };
   }
