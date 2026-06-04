@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   Modal, Animated, Alert, Dimensions, ScrollView,
-  Vibration, TextInput, KeyboardAvoidingView, Platform,
+  Vibration, TextInput, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -138,6 +138,9 @@ export default function ScanScreen() {
   const [breakdown,    setBreakdown]    = useState<BillBreakdown | null>(null);
   const [consumption,  setConsumption]  = useState(0);
   const [isBaseline,   setIsBaseline]   = useState(false);
+  // Fotoğraf akışı için
+  const [photoUri,     setPhotoUri]     = useState<string | null>(null);
+  const [photoInput,   setPhotoInput]   = useState('');
 
   // ── Animasyon ref'leri ────────────────────────────────────────────────────
   const scanAnim  = useRef(new Animated.Value(0)).current;
@@ -196,6 +199,8 @@ export default function ScanScreen() {
     setPhase('idle');
     setOcrResult(null);
     setBreakdown(null);
+    setPhotoUri(null);
+    setPhotoInput('');
   }, []);
 
   useEffect(() => { reset(); }, [meterType, mode]);
@@ -251,6 +256,24 @@ export default function ScanScreen() {
   }
 
   // ── Otomatik Tarama ───────────────────────────────────────────────────────
+  // Fotoğraf onaylama akışı
+  const handlePhotoConfirm = useCallback(async () => {
+    // Türkçe format parse
+    const trimmed = photoInput.trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
+    const val = parseFloat(trimmed);
+    if (!trimmed || isNaN(val) || val <= 0) {
+      Alert.alert('Hatalı Değer', 'Fotoğraftaki sayacı girerek devam et (örn: 43817)');
+      return;
+    }
+    const mockResult: OCRResult = {
+      type: meterType, indexValue: Math.floor(val),
+      confidence: 0.95, rawText: trimmed, parsedText: String(Math.floor(val)),
+    };
+    setOcrResult(mockResult);
+    const ok = await processResult(mockResult.indexValue);
+    if (ok) setModalVisible(true);
+  }, [photoInput, meterType]);
+
   const handleAutoScan = useCallback(async () => {
     if (running.current) return;
     if (!subStore.canScan(meterType)) {
@@ -265,33 +288,28 @@ export default function ScanScreen() {
       return;
     }
 
+    if (!camRef.current) return;
     running.current = true;
     setPhase('scanning');
-    startScanAnim();
 
-    timerRef.current = setTimeout(async () => {
+    try {
+      Vibration.vibrate(40);
+      const photo = await camRef.current.takePictureAsync({
+        quality: 0.92,
+        skipProcessing: false,
+      });
+      setPhotoUri(photo.uri);
+      setPhotoInput('');
       setPhase('detected');
-      stopScanAnim();
-      doPulse();
       Vibration.vibrate(60);
-
-      timerRef.current = setTimeout(async () => {
-        setPhase('processing');
-        try {
-          // ML Kit gelince: simulateOCR → gerçek frame processor ile değiştirilir
-          const result = await simulateOCR(`frame://${meterType}`, meterType);
-          setOcrResult(result);
-          const ok = await processResult(result.indexValue);
-          if (ok) setModalVisible(true);
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : 'Lütfen tekrar deneyin.';
-          Alert.alert('Okuma Başarısız', msg, [{ text: 'Tekrar Dene', onPress: reset }]);
-        } finally {
-          running.current = false;
-          setPhase('idle');
-        }
-      }, 350);
-    }, AUTO_SCAN_DELAY);
+      doPulse();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Fotoğraf çekilemedi.';
+      Alert.alert('Hata', msg, [{ text: 'Tamam', onPress: reset }]);
+    } finally {
+      running.current = false;
+      if (!photoUri) setPhase('idle');
+    }
   }, [meterType, city, district]);
 
   // ── Manuel Giriş ──────────────────────────────────────────────────────────
@@ -424,33 +442,17 @@ export default function ScanScreen() {
       </View>
 
       {/* ── OTOMATİK MOD ──────────────────────────────── */}
-      {mode === 'auto' && (
+      {mode === 'auto' && !photoUri && (
         <View style={s.vfWrap}>
           <Animated.View style={{ width: '100%', transform: [{ scale: pulseAnim }] }}>
-            <View style={[s.vf, { borderColor: phase === 'detected' ? C.brand : `${color}50` }]}>
+            <View style={[s.vf, { borderColor: phase === 'scanning' ? color : `${color}50` }]}>
               <CameraView
                 ref={camRef}
                 style={StyleSheet.absoluteFill}
                 facing="back"
                 enableTorch={torchOn}
               />
-              <Corners color={color} lit={phase === 'detected'} />
-
-              {phase === 'scanning' && (
-                <Animated.View style={[s.scanLine, {
-                  backgroundColor: color,
-                  opacity:   glowOpacity,
-                  transform: [{ translateY: scanY }],
-                  shadowColor: color, shadowOpacity: 0.9, shadowRadius: 8, elevation: 6,
-                }]} />
-              )}
-
-              {phase === 'detected' && (
-                <View style={s.detectedLayer}>
-                  <Text style={s.detectedCheck}>✓</Text>
-                </View>
-              )}
-
+              <Corners color={color} lit={phase === 'scanning'} />
               {torchOn && (
                 <View style={s.torchBadge}>
                   <Text style={s.torchBadgeText}>🔦 Işık</Text>
@@ -458,15 +460,38 @@ export default function ScanScreen() {
               )}
             </View>
           </Animated.View>
-
-          <View style={{ marginTop: 14, alignItems: 'center' }}>
-            <PhaseTag phase={phase} color={color} />
-          </View>
           <Text style={s.hint}>
             {meterType === 'water'
-              ? 'Siyah tekerlekleri kadrajlayın (kırmızı bölüm hariç)'
-              : 'Ondalık ayırıcı öncesini kadrajlayın'}
+              ? '💧 Siyah rakamları kadrajlayın, sonra fotoğraf çekin'
+              : '🔥 Ondalık nokta öncesini kadrajlayın, sonra fotoğraf çekin'}
           </Text>
+        </View>
+      )}
+
+      {/* ── FOTOĞRAF ONAY EKRANI ──────────────────────── */}
+      {mode === 'auto' && photoUri && (
+        <View style={s.photoWrap}>
+          <Text style={[s.photoLabel, { color }]}>Sayaç fotoğrafı çekildi</Text>
+          <Image source={{ uri: photoUri }} style={s.photoPreview} resizeMode="contain" />
+          <View style={[s.photoCard, { borderColor: `${color}40` }]}>
+            <Text style={s.photoHint}>
+              {meterType === 'water'
+                ? 'Fotoğraftaki siyah rakamları girin (ondalık dahil etmeyin)'
+                : 'Fotoğraftaki rakamları girin (ondalık dahil etmeyin)'}
+            </Text>
+            <TextInput
+              style={[s.manualInput, { borderColor: color, marginTop: 10 }]}
+              value={photoInput}
+              onChangeText={setPhotoInput}
+              placeholder={meterType === 'water' ? 'Örn: 43817' : 'Örn: 284510'}
+              placeholderTextColor={C.textMuted}
+              keyboardType="numeric"
+              returnKeyType="done"
+              onSubmitEditing={handlePhotoConfirm}
+              maxLength={8}
+              autoFocus
+            />
+          </View>
         </View>
       )}
 
@@ -508,9 +533,22 @@ export default function ScanScreen() {
         )}
 
         {mode === 'auto' ? (
-          phase === 'idle' ? (
+          photoUri ? (
+            <View style={{ gap: 8 }}>
+              <TouchableOpacity
+                style={[s.bigBtn, { backgroundColor: color }, !photoInput.trim() && s.btnDisabled]}
+                onPress={handlePhotoConfirm}
+                disabled={!photoInput.trim()}
+              >
+                <Text style={s.bigBtnText}>✅  Onayla & Hesapla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.bigBtn, s.cancelBtn]} onPress={reset}>
+                <Text style={[s.bigBtnText, { color: C.danger }]}>🔄  Yeniden Çek</Text>
+              </TouchableOpacity>
+            </View>
+          ) : phase === 'idle' ? (
             <TouchableOpacity style={[s.bigBtn, { backgroundColor: color }]} onPress={handleAutoScan}>
-              <Text style={s.bigBtnText}>🔍  Otomatik Oku</Text>
+              <Text style={s.bigBtnText}>📷  Fotoğraf Çek</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={[s.bigBtn, s.cancelBtn]} onPress={reset}>
@@ -685,4 +723,11 @@ const s = StyleSheet.create({
   retryText:     { color: C.textDim, fontWeight: '700' },
   confirmBtn:    { flex: 1, borderRadius: RADIUS.lg, paddingVertical: 15, alignItems: 'center' },
   confirmText:   { color: C.bg, fontWeight: '900', fontSize: FONT.md },
+
+  // Fotoğraf akışı
+  photoWrap:     { flex: 1, padding: 16, gap: 12 },
+  photoLabel:    { fontSize: FONT.sm, fontWeight: '800', textAlign: 'center' },
+  photoPreview:  { width: '100%', height: 200, borderRadius: RADIUS.lg, backgroundColor: C.card, borderWidth: 1, borderColor: C.border },
+  photoCard:     { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1 },
+  photoHint:     { color: C.textDim, fontSize: FONT.sm, lineHeight: 18 },
 });
