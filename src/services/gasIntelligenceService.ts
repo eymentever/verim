@@ -160,7 +160,9 @@ export function analyzeGasLeakRisk(logs: ConsumptionLog[], city = 'İstanbul'): 
 
   // Yaz anomalisi: Haz–Ağu'da ısıtma tüketimi olmamalı
   const isSummer = recent.month >= 6 && recent.month <= 8;
-  const summerAnomaly = isSummer && recent.raw > 15; // 15 m³ üzeri yaz ayında şüpheli
+  // Yaz anomalisi: mutlak eşik (>15 m³) VE normalize tüketim de yüksek olmalı (ratio >= 1.0).
+  // ratio < 1 olduğunda kullanıcı normalden AZ kullanmış demektir — kaçak değil, uyarı yanlış olur.
+  const summerAnomaly = isSummer && recent.raw > 15 && ratio >= 1.0;
 
   // Art arda anomali kontrolü
   const consecutiveAnomalies = normalized
@@ -175,9 +177,9 @@ export function analyzeGasLeakRisk(logs: ConsumptionLog[], city = 'İstanbul'): 
   else if (ratio > 1.3)                       score = 30;
   else if (consecutiveAnomalies >= 2)         score = 45;
 
-  // Tahmini kayıp
+  // Tahmini kayıp — ratio < 1 durumunda negatif olmasını engelle
   const estimatedLoss = score >= 30
-    ? Math.round((recent.cost - recent.cost / ratio) * 10) / 10
+    ? Math.max(0, Math.round((recent.cost - recent.cost / ratio) * 10) / 10)
     : undefined;
 
   const level: RiskLevel =
