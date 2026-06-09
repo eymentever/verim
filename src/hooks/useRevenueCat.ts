@@ -54,7 +54,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
     try {
       const result = await restorePurchases();
       if (result.success && result.tier) {
-        upgradeTo(result.tier, 'monthly');
+        upgradeTo(result.tier, result.billingCycle);
       }
       return result;
     } finally {

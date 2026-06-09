@@ -44,19 +44,57 @@ const GAS_REGEX = /^(\d{5,8})$/;
 
 // ── Parser fonksiyonları ──────────────────────────────────────────────────────
 
+/**
+ * Türkiye sayaç formatlarını doğru parse eder.
+ *
+ * Su  : 43817 | 43817,05 | 43.817 | 43.817,05 | 200 | 00200
+ * Gaz : 284510 | 284510.372 | 281.372 | 28.451 | 8372
+ *
+ * type='water' → tek nokta + ≤3 önce + tam 3 sonra = binlik ayırıcı
+ * type='gas'   → tek nokta her zaman ondalık ayırıcı
+ */
+export function extractIntegerPart(raw: string, type: MeterType = 'water'): string {
+  const s = raw.trim();
+  const dotCount   = (s.match(/\./g) ?? []).length;
+  const commaCount = (s.match(/,/g) ?? []).length;
+
+  let intStr: string;
+
+  if (commaCount > 0) {
+    intStr = s.replace(/\./g, '').split(',')[0];
+  } else if (dotCount > 1) {
+    intStr = s.replace(/\./g, '');
+  } else if (dotCount === 1) {
+    const dotIdx = s.indexOf('.');
+    const before = s.substring(0, dotIdx);
+    const after  = s.substring(dotIdx + 1);
+    const isThousand =
+      type === 'water' &&
+      before.length <= 3 &&
+      after.length === 3 &&
+      /^\d{3}$/.test(after);
+    intStr = isThousand ? before + after : before;
+  } else {
+    intStr = s;
+  }
+
+  return intStr.replace(/^0+(?=\d)/, '').trim() || '0';
+}
+
 function parseWater(raw: string): { value: number; parsed: string } | null {
-  // Ondalık/virgülden önceki tam kısmı al ve baştaki/sondaki boşlukları temizle
-  const intPart = raw.split(/[.,]/)[0].trim();
+  const intPart = extractIntegerPart(raw, 'water');
   if (!WATER_REGEX.test(intPart)) return null;
   const value = parseInt(intPart, 10);
-  return isNaN(value) ? null : { value, parsed: intPart };
+  if (isNaN(value) || value <= 0) return null;
+  return { value, parsed: intPart };
 }
 
 function parseGas(raw: string): { value: number; parsed: string } | null {
-  const intPart = raw.split(/[.,]/)[0].trim();
+  const intPart = extractIntegerPart(raw, 'gas');
   if (!GAS_REGEX.test(intPart)) return null;
   const value = parseInt(intPart, 10);
-  return isNaN(value) ? null : { value, parsed: intPart };
+  if (isNaN(value) || value <= 0) return null;
+  return { value, parsed: intPart };
 }
 
 // ── Doğrulama ─────────────────────────────────────────────────────────────────

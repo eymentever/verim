@@ -23,7 +23,7 @@ function groupByMonth(logs: ConsumptionLog[], type: 'water' | 'gas'): MonthStats
     .filter((l) => l.type === type)
     .forEach((l) => {
       const d = new Date(l.date);
-      const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}`;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (!map.has(key)) map.set(key, { vals: [], dateKey: key });
       map.get(key)!.vals.push(l.consumption);
     });

@@ -74,9 +74,7 @@ export function getBillBreakdown(
   const discountFactor = district ? getDistrictWaterMultiplier(city, district) : 1.0;
 
   if (type === 'water') {
-    // İnsani su hakkı: ücretsiz m³ çıkar (İSKİ vb.)
-    const freeM3 = config.humanWaterRightM3 ?? 0;
-    let remaining = Math.max(0, consumption - freeM3);
+    let remaining = consumption;
     let rawTariff = 0;
     let prevLimit = 0;
 
@@ -86,6 +84,14 @@ export function getBillBreakdown(
       rawTariff += tierVolume * (tier.rate * discountFactor);
       remaining -= tierVolume;
       prevLimit = tier.limit;
+    }
+
+    // İnsani su hakkı: ücretsiz m³'ü kademe-1 birim fiyatından kredi olarak düş (İSKİ yöntemi)
+    const humanFreeM3 = config.humanWaterRightM3 ?? 0;
+    if (humanFreeM3 > 0) {
+      const effectiveFree  = Math.min(humanFreeM3, consumption);
+      const tier1Rate      = config.waterTiers[0]?.rate ?? 0;
+      rawTariff = Math.max(0, rawTariff - effectiveFree * tier1Rate * discountFactor);
     }
 
     rawTariff = r2(rawTariff);
@@ -256,6 +262,7 @@ export const useUtilityStore = create<UtilityState>()(
           const encrypted = encryptData(value);
           await AsyncStorage.setItem(name, encrypted);
         },
+       
         removeItem: async (name) => {
           await AsyncStorage.removeItem(name);
         },

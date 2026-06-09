@@ -526,17 +526,23 @@ export function calculateWaterCost(
 
   // İlçe bazlı resmi katsayı çarpanı
   const discountFactor = district ? getDistrictWaterMultiplier(city, district) : 1.0;
-  // İnsani su hakkı: ücretsiz m³'ü çıkar (İSKİ vb.)
-  const freeM3 = config.humanWaterRightM3 ?? 0;
-  const billableConsumption = Math.max(0, consumption - freeM3);
-  remaining = billableConsumption;
+  remaining = consumption;
 
+  // Toplam tüketim üzerinden kademeli tarife uygula
   for (const tier of config.waterTiers) {
     if (remaining <= 0) break;
     const tierVolume = Math.min(remaining, tier.limit - prevLimit);
     rawTariff += tierVolume * (tier.rate * discountFactor);
     remaining -= tierVolume;
     prevLimit = tier.limit;
+  }
+
+  // İnsani su hakkı: kademe-1 birim fiyatından kredi düş (İSKİ yöntemi)
+  const humanFreeM3 = config.humanWaterRightM3 ?? 0;
+  if (humanFreeM3 > 0) {
+    const effectiveFree = Math.min(humanFreeM3, consumption);
+    const tier1Rate     = config.waterTiers[0]?.rate ?? 0;
+    rawTariff = Math.max(0, rawTariff - effectiveFree * tier1Rate * discountFactor);
   }
 
   // Resmi Bakanlık ve Belediye Vergilendirmesi (2026):

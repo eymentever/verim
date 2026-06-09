@@ -140,11 +140,11 @@ export default function Dashboard() {
   // Yeni okuma sonrası otomatik zeka analizi + push notification
   useIntelligenceAlerts({ logs: activeLogs, city });
 
-  // Okuma hatırlatıcısı
+  // Okuma hatırlatıcısı — affectedType'a göre ayrı bayrak
   const reminder  = useDualReminder(
     activeLogs,
-    anomaly.level !== 'none', // su anomalisi
-    anomaly.level !== 'none', // gaz anomalisi (aynı skoru paylaşıyorlar)
+    anomaly.level !== 'none' && (anomaly.affectedType === 'water' || anomaly.affectedType === 'both'),
+    anomaly.level !== 'none' && (anomaly.affectedType === 'gas'   || anomaly.affectedType === 'both'),
   );
 
   // Kritik uyarı pulse animasyonu
@@ -262,13 +262,13 @@ export default function Dashboard() {
             <View style={s.limitRow}>
               <Text style={s.limitItem}>
                 💧 <Text style={{ color: C.water, fontWeight: '800' }}>
-                  {plan.maxScansPerMonth - subStore.monthlyScanCount('water')}
+                  {Math.max(0, plan.maxScansPerMonth - subStore.monthlyScanCount('water'))}
                 </Text> kaldı
               </Text>
               <Text style={s.limitSep}>·</Text>
               <Text style={s.limitItem}>
                 🔥 <Text style={{ color: C.gas, fontWeight: '800' }}>
-                  {plan.maxScansPerMonth - subStore.monthlyScanCount('gas')}
+                  {Math.max(0, plan.maxScansPerMonth - subStore.monthlyScanCount('gas'))}
                 </Text> kaldı
               </Text>
               <TouchableOpacity onPress={() => router.push('/paywall')} style={s.limitBtn}>
@@ -538,7 +538,8 @@ const s = StyleSheet.create({
   histDate:       { color: C.textDim, fontSize: FONT.xs, width: 72 },
   histType:       { color: C.text, fontSize: FONT.sm, flex: 1 },
   histCost:       { color: C.text, fontSize: FONT.sm, fontWeight: '700' },
-  histEmpty:      { color: C.textDim, fontSize: FONT.sm, textAlign: 'center', paddingVertical: 16 },
+  histEmpty:      { color: C.textDim, fontSize: FONT.sm, textAlign: 'center', 
+paddingVertical: 16 },
 
   // Ad
   adText:         { color: C.brand, fontSize: FONT.sm, fontWeight: '700', flex: 1 },

@@ -17,6 +17,7 @@ import {
   simulateOCR,
   validateReading,
   computeConsumption,
+  extractIntegerPart,
   MeterType,
   OCRResult,
 } from '../src/services/ocrService';
@@ -258,16 +259,15 @@ export default function ScanScreen() {
   // ── Otomatik Tarama ───────────────────────────────────────────────────────
   // Fotoğraf onaylama akışı
   const handlePhotoConfirm = useCallback(async () => {
-    // Türkçe format parse
-    const trimmed = photoInput.trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
-    const val = parseFloat(trimmed);
-    if (!trimmed || isNaN(val) || val <= 0) {
+    const intStr = extractIntegerPart(photoInput.trim(), meterType);
+    const val    = parseInt(intStr, 10);
+    if (!intStr || isNaN(val) || val <= 0) {
       Alert.alert('Hatalı Değer', 'Fotoğraftaki sayacı girerek devam et (örn: 43817)');
       return;
     }
     const mockResult: OCRResult = {
-      type: meterType, indexValue: Math.floor(val),
-      confidence: 0.95, rawText: trimmed, parsedText: String(Math.floor(val)),
+      type: meterType, indexValue: val,
+      confidence: 0.95, rawText: photoInput.trim(), parsedText: intStr,
     };
     setOcrResult(mockResult);
     const ok = await processResult(mockResult.indexValue);
@@ -292,12 +292,14 @@ export default function ScanScreen() {
     running.current = true;
     setPhase('scanning');
 
+    let captured = false;
     try {
       Vibration.vibrate(40);
       const photo = await camRef.current.takePictureAsync({
         quality: 0.92,
         skipProcessing: false,
       });
+      captured = true;
       setPhotoUri(photo.uri);
       setPhotoInput('');
       setPhase('detected');
@@ -308,17 +310,16 @@ export default function ScanScreen() {
       Alert.alert('Hata', msg, [{ text: 'Tamam', onPress: reset }]);
     } finally {
       running.current = false;
-      if (!photoUri) setPhase('idle');
+      if (!captured) setPhase('idle');
     }
   }, [meterType, city, district]);
 
   // ── Manuel Giriş ──────────────────────────────────────────────────────────
   const handleManualSubmit = useCallback(async () => {
-    // Türkçe format: binlik ayırıcı '.' → sil, ondalık ',' → '.'
-    const trimmed = manualInput.trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
-    const val     = parseFloat(trimmed);
+    const intStr = extractIntegerPart(manualInput.trim(), meterType);
+    const val    = parseInt(intStr, 10);
 
-    if (!trimmed || isNaN(val) || val <= 0) {
+    if (!intStr || isNaN(val) || val <= 0) {
       Alert.alert('Hatalı Değer', 'Lütfen geçerli bir sayaç değeri girin (örn: 43817)');
       return;
     }
@@ -332,10 +333,10 @@ export default function ScanScreen() {
 
     const mockResult: OCRResult = {
       type:       meterType,
-      indexValue: Math.floor(val),       // tam m³
-      confidence: 1.0,                    // manuel giriş = %100 güven
-      rawText:    trimmed,
-      parsedText: String(Math.floor(val)),
+      indexValue: val,
+      confidence: 1.0,
+      rawText:    manualInput.trim(),
+      parsedText: intStr,
     };
     setOcrResult(mockResult);
     const ok = await processResult(mockResult.indexValue);

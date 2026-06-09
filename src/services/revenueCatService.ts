@@ -33,10 +33,11 @@ export interface RCPackage {
 }
 
 export interface PurchaseResult {
-  success: boolean;
-  tier: 'pro' | 'landlord' | null;
-  expiresAt: string | null;
-  error?: string;
+  success:      boolean;
+  tier:         'pro' | 'landlord' | null;
+  billingCycle: 'monthly' | 'yearly';
+  expiresAt:    string | null;
+  error?:       string;
 }
 
 /**
@@ -82,12 +83,13 @@ export async function purchasePackage(pkg: RCPackage): Promise<PurchaseResult> {
     expires.setMonth(expires.getMonth() + (pkg.period === 'yearly' ? 12 : 1));
 
     return {
-      success: true,
-      tier: pkg.tier,
-      expiresAt: expires.toISOString(),
+      success:      true,
+      tier:         pkg.tier,
+      billingCycle: pkg.period,
+      expiresAt:    expires.toISOString(),
     };
   } catch (e: any) {
-    return { success: false, tier: null, expiresAt: null, error: e?.message ?? 'Satın alma başarısız.' };
+    return { success: false, tier: null, billingCycle: 'monthly', expiresAt: null, error: e?.message ?? 'Satın alma başarısız.' };
   }
 }
 
@@ -101,9 +103,10 @@ export async function restorePurchases(): Promise<PurchaseResult> {
 
     await new Promise((r) => setTimeout(r, 800));
     // Simülasyonda her zaman free döner:
-    return { success: true, tier: null, expiresAt: null };
+    // Gerçek entegrasyonda: billingCycle customerInfo'dan okunur
+    return { success: true, tier: null, billingCycle: 'monthly', expiresAt: null };
   } catch (e: any) {
-    return { success: false, tier: null, expiresAt: null, error: e?.message };
+    return { success: false, tier: null, billingCycle: 'monthly', expiresAt: null, error: e?.message };
   }
 }
 

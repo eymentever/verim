@@ -155,10 +155,10 @@ export default function AnalyticsScreen() {
     const now = new Date();
     return Array.from({ length: 6 }, (_, i) => {
       const d   = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const m   = activeLogs.filter(l => {
         const ld = new Date(l.date);
-        return `${ld.getFullYear()}-${ld.getMonth()}` === key;
+        return `${ld.getFullYear()}-${String(ld.getMonth() + 1).padStart(2, '0')}` === key;
       });
       return {
         label: MONTHS[d.getMonth()],
@@ -620,5 +620,5 @@ const s = StyleSheet.create({
   monthLabel:  { color: C.textDim, fontSize: FONT.xs, width: 36 },
   monthVals:   { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   monthVal:    { color: C.text, fontSize: FONT.xs },
-  monthSep:    { color: C.textMuted, fontSize: FONT.xs },
+  monthSep:    { color: C.textDim, fontSize: FONT.xs },
 });

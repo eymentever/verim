@@ -570,7 +570,7 @@ export default function SettingsScreen() {
               { text: 'Evet, Sil', style: 'destructive', onPress: () => {
                 store.logs.forEach(l => store.removeLog(l.id));
                 store.properties.forEach(p => store.removeProperty(p.id));
-                store.setProfile({ setupComplete: false, city: 'İstanbul', district: '', name: '', monthlyBudget: 0 });
+                store.setProfile({ setupComplete: false, city: 'İstanbul', district: '', name: '', monthlyBudget: 0, householdSize: 3 });
                 Alert.alert('✓ Silindi', 'Tüm veriler temizlendi.');
               }},
             ])}>
@@ -783,5 +783,8 @@ const s = StyleSheet.create({
   modalRowText:     { color: C.text, fontSize: FONT.md },
   modalActions:     { flexDirection: 'row', gap: 12, justifyContent: 'flex-end', marginTop: 8 },
   modalBtn:         { paddingVertical: 10, paddingHorizontal: 16, borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center' },
-  modalCloseBtn:    { paddingVertical: 10, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  modalCloseBtn:    { paddingVertical: 10, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center', flex: 1 },
+  modalSaveBtn:     { paddingVertical: 10, paddingHorizontal: 20, borderRadius: RADIUS.sm, backgroundColor: C.water, alignItems: 'center', justifyContent: 'center' },
+  modalBtnText:     { color: C.bg, fontSize: FONT.sm, fontWeight: '700' },
+  modalCloseBtnText:{ color: C.textDim, fontSize: FONT.sm, fontWeight: '600' },
 });

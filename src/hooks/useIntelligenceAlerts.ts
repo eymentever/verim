@@ -24,13 +24,24 @@ interface Options {
 /**
  * Log sayısı değiştiğinde (yeni okuma eklendi) zeka analizini tetikler.
  * Kritik veya yüksek risk tespit edilirse push notification gönderir.
+ *
+ * prevCountRef'i city ile birlikte tutar — mülk değişimi (city değişir)
+ * durumunda sayacı sıfırlar ve sahte uyarı gönderilmesini engeller.
  */
 export function useIntelligenceAlerts({ logs, city }: Options) {
-  // Bir önceki log sayısını hatırla — sadece yeni ekleme olduğunda çalışsın
   const prevCountRef = useRef(logs.length);
+  const prevCityRef  = useRef(city);
 
   useEffect(() => {
     const currentCount = logs.length;
+    const cityChanged  = city !== prevCityRef.current;
+
+    // Şehir/mülk değişti → sayacı yeni mülkün log sayısına eşitle, analiz yapma
+    if (cityChanged) {
+      prevCityRef.current  = city;
+      prevCountRef.current = currentCount;
+      return;
+    }
 
     // Yeni okuma eklenmediyse (silme veya ilk yükleme) çalışma
     if (currentCount <= prevCountRef.current) {
@@ -51,7 +62,7 @@ export function useIntelligenceAlerts({ logs, city }: Options) {
       // ── Su analizi ──────────────────────────────────────────────────────────
       const waterLogs = logs.filter(l => l.type === 'water');
       if (waterLogs.length >= 2) {
-        const waterRisk = analyzeWaterLeakRisk(waterLogs, waterRate);
+        const waterRisk = analyzeWaterLeakRisk(waterLogs, waterRate, city);
         if (waterRisk.level === 'critical' || waterRisk.level === 'high') {
           await notifyLeakSuspicion('water', waterRisk.score).catch(() => {});
         }
@@ -60,7 +71,7 @@ export function useIntelligenceAlerts({ logs, city }: Options) {
       // ── Gaz analizi ─────────────────────────────────────────────────────────
       const gasLogs = logs.filter(l => l.type === 'gas');
       if (gasLogs.length >= 2) {
-        const gasRisk = analyzeGasLeakRisk(gasLogs);
+        const gasRisk = analyzeGasLeakRisk(gasLogs, city);
         if (gasRisk.level === 'critical' || gasRisk.level === 'high') {
           await notifyLeakSuspicion('gas', gasRisk.score).catch(() => {});
         }

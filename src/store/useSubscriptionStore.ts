@@ -110,6 +110,8 @@ interface SubscriptionState {
   billingCycle: BillingCycle;
   expiresAt: string | null;      // ISO date
   scanUsage: ScanUsage[];
+  /** Free / süresi-dolmuş modunda yapılan taramalar — paid taramalar bu kotaya sayılmaz */
+  freeUsage: ScanUsage[];
 
   // Computed helpers
   currentPlan: () => SubscriptionPlan;
@@ -134,6 +136,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       billingCycle: 'monthly',
       expiresAt: null,
       scanUsage: [],
+      freeUsage: [],
 
       currentPlan: () => PLANS[get().tier],
 
@@ -145,38 +148,36 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       monthlyScanCount: (type) => {
         const key = currentMonthKey();
-        const usage = get().scanUsage.find((u) => u.month === key);
-        return usage?.[type] ?? 0;
+        const isPaid = get().effectivePlan().maxScansPerMonth === -1;
+        const bucket = isPaid ? get().scanUsage : get().freeUsage;
+        return bucket.find((u) => u.month === key)?.[type] ?? 0;
       },
 
       canScan: (type) => {
-        const plan = get().currentPlan();
-        // Süresi dolmuş abonelik → free limit uygula
-        if (plan.maxScansPerMonth === -1 && !get().isActive()) {
-          return get().monthlyScanCount(type) < PLANS['free'].maxScansPerMonth;
-        }
+        const plan = get().effectivePlan();
         if (plan.maxScansPerMonth === -1) return true;
-        return get().monthlyScanCount(type) < plan.maxScansPerMonth;
+        // Free veya süresi dolmuş: freeUsage kotasına bak
+        const key = currentMonthKey();
+        const used = get().freeUsage.find((u) => u.month === key)?.[type] ?? 0;
+        return used < plan.maxScansPerMonth;
       },
 
       incrementScan: (type) => {
-        const key = currentMonthKey();
-        set((s) => {
-          const existing = s.scanUsage.find((u) => u.month === key);
-          if (existing) {
-            return {
-              scanUsage: s.scanUsage.map((u) =>
-                u.month === key ? { ...u, [type]: u[type] + 1 } : u
-              ),
-            };
-          }
-          return {
-            scanUsage: [
-              ...s.scanUsage,
-              { month: key, water: type === 'water' ? 1 : 0, gas: type === 'gas' ? 1 : 0 },
-            ],
-          };
-        });
+        const key   = currentMonthKey();
+        const isPaid = get().effectivePlan().maxScansPerMonth === -1;
+
+        const addToUsage = (prev: ScanUsage[]): ScanUsage[] => {
+          const exists = prev.find((u) => u.month === key);
+          if (exists) return prev.map((u) => u.month === key ? { ...u, [type]: u[type] + 1 } : u);
+          return [...prev, { month: key, water: type === 'water' ? 1 : 0, gas: type === 'gas' ? 1 : 0 }];
+        };
+
+        set((s) => ({
+          // Her zaman toplam sayacı artır (analitik için)
+          scanUsage: addToUsage(s.scanUsage),
+          // Sadece free/expired modunda kota sayacını artır
+          freeUsage: isPaid ? s.freeUsage : addToUsage(s.freeUsage),
+        }));
       },
 
       upgradeTo: (tier, cycle) => {
