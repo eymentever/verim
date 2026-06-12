@@ -189,7 +189,6 @@ export default function AnalyticsScreen() {
   const totalCost  = activeLogs.reduce((s, l) => s + l.cost, 0);
   const totalWater = activeLogs.filter(l => l.type === 'water').reduce((s, l) => s + l.consumption, 0);
   const totalGas   = activeLogs.filter(l => l.type === 'gas').reduce((s, l) => s + l.consumption, 0);
-  const avgCost    = activeLogs.length ? totalCost / activeLogs.length : 0;
 
   const barColor   = filter === 'water' ? C.water : filter === 'gas' ? C.gas : C.pro;
   const BAR_W      = (CHART_W - 32) / 6 - 8;

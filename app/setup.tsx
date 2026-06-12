@@ -189,12 +189,13 @@ export default function SetupScreen() {
               <View style={s.tariffHeader}>
                 <Text style={s.tariffTitle}>📋 {selectedCity} Tarifesi (2026)</Text>
                 <View style={s.sourceBadge}>
-                  <Text style={s.sourceText}>Resmi Tarife</Text>
+                  <Text style={s.sourceText}>{config.verified ? 'Resmi Tarife' : 'Tahmini Tarife'}</Text>
                 </View>
               </View>
               {config.waterTiers.map((tier, idx) => {
                 const prevLimit = idx === 0 ? 0 : config.waterTiers[idx - 1].limit;
-                const limitStr = tier.limit === 999 ? `${prevLimit}+` : `${prevLimit}–${tier.limit}`;
+                // Son kademe limiti Number.MAX_SAFE_INTEGER = sınırsız
+                const limitStr = tier.limit >= Number.MAX_SAFE_INTEGER ? `${prevLimit}+` : `${prevLimit}–${tier.limit}`;
                 return (
                   <Text key={idx} style={s.tariffRow}>
                     💧 Su Kademe {idx + 1}: {limitStr} m³ → {tier.rate.toFixed(2)} ₺/m³

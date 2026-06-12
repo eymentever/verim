@@ -36,6 +36,8 @@ export interface Property {
   type:          'home' | 'office' | 'rental' | 'other';
   isPrepaid?:    boolean;   // kartlı sayaç modu
   prepaidCredit?: number;  // yüklenen kredi (TL)
+  prepaidType?:  UtilityType;  // kartlı sayaç türü (varsayılan: gas)
+  prepaidLoadedAt?: string;    // kredinin yüklendiği tarih (ISO) — tüketim bu tarihten sonra düşülür
 }
 
 export interface UserProfile {
@@ -64,42 +66,53 @@ export interface BillBreakdown {
   subCost:     number;   // ₺ (abonelik bedeli vergili)
 }
 
+/**
+ * @param priorMonthM3 - Bu ay aynı tür için daha önce faturalandırılmış m³.
+ *   Kademe hesabı kümülatif tüketim üzerinden devam eder (kademe sıfırlanmaz),
+ *   sabit abonelik bedeli ve insani su hakkı ayda yalnızca 1 kez uygulanır.
+ */
 export function getBillBreakdown(
-  type:        UtilityType,
-  consumption: number,
-  city:        string,
-  district?:   string,
+  type:         UtilityType,
+  consumption:  number,
+  city:         string,
+  district?:    string,
+  priorMonthM3: number = 0,
 ): BillBreakdown {
   const config = getCityConfig(city);
   const discountFactor = district ? getDistrictWaterMultiplier(city, district) : 1.0;
+  const prior = Math.max(0, priorMonthM3);
+  const cum   = prior + consumption;
 
   if (type === 'water') {
-    let remaining = consumption;
-    let rawTariff = 0;
-    let prevLimit = 0;
+    // Kümülatif m³ için kademeli tarife + insani su hakkı (İSKİ yöntemi)
+    const rawAt = (c: number): number => {
+      let remaining = c;
+      let raw = 0;
+      let prevLimit = 0;
+      for (const tier of config.waterTiers) {
+        if (remaining <= 0) break;
+        const tierVolume = Math.min(remaining, tier.limit - prevLimit);
+        raw += tierVolume * (tier.rate * discountFactor);
+        remaining -= tierVolume;
+        prevLimit = tier.limit;
+      }
+      const freeM3 = config.humanWaterRightM3 ?? 0;
+      if (freeM3 > 0) {
+        const effectiveFree = Math.min(freeM3, c);
+        const tier1Rate     = config.waterTiers[0]?.rate ?? 0;
+        raw = Math.max(0, raw - effectiveFree * tier1Rate * discountFactor);
+      }
+      return raw;
+    };
 
-    for (const tier of config.waterTiers) {
-      if (remaining <= 0) break;
-      const tierVolume = Math.min(remaining, tier.limit - prevLimit);
-      rawTariff += tierVolume * (tier.rate * discountFactor);
-      remaining -= tierVolume;
-      prevLimit = tier.limit;
-    }
-
-    // İnsani su hakkı: ücretsiz m³'ü kademe-1 birim fiyatından kredi olarak düş (İSKİ yöntemi)
-    const humanFreeM3 = config.humanWaterRightM3 ?? 0;
-    if (humanFreeM3 > 0) {
-      const effectiveFree  = Math.min(humanFreeM3, consumption);
-      const tier1Rate      = config.waterTiers[0]?.rate ?? 0;
-      rawTariff = Math.max(0, rawTariff - effectiveFree * tier1Rate * discountFactor);
-    }
-
-    rawTariff = r2(rawTariff);
+    // Bu okumanın payı = kümülatif maliyet − ay içi önceki maliyet
+    const rawTariff = r2(rawAt(cum) - rawAt(prior));
     const kdvCost = r2(rawTariff * 0.04);
     // ÇTV: büyükşehir merkezleri 4.00 ₺/m³, çevre ilçeler (discountFactor < 1) maktu 2.00 ₺/m³
     const ctvRate = discountFactor < 1 ? 2.00 : 4.00;
     const ctvCost = r2(consumption * ctvRate);
-    const subCost = r2((config.taxes.abonelikUcreti * discountFactor) * 1.10);
+    // Abonelik bedeli ayda 1 kez — ayın ilk okumasında
+    const subCost = prior > 0 ? 0 : r2((config.taxes.abonelikUcreti * discountFactor) * 1.10);
     const totalCost = r2(rawTariff + kdvCost + ctvCost + subCost);
 
     return {
@@ -111,25 +124,28 @@ export function getBillBreakdown(
       totalCost,
     };
   } else {
-    let rawTariff = 0;
-    if (config.gasTiers && config.gasTiers.length > 0) {
-      let remaining = consumption;
-      let prevLimit = 0;
-      for (const tier of config.gasTiers) {
-        if (remaining <= 0) break;
-        const tierVolume = Math.min(remaining, tier.limit - prevLimit);
-        rawTariff += tierVolume * tier.rate;
-        remaining -= tierVolume;
-        prevLimit = tier.limit;
+    const rawAt = (c: number): number => {
+      if (config.gasTiers && config.gasTiers.length > 0) {
+        let remaining = c;
+        let raw = 0;
+        let prevLimit = 0;
+        for (const tier of config.gasTiers) {
+          if (remaining <= 0) break;
+          const tierVolume = Math.min(remaining, tier.limit - prevLimit);
+          raw += tierVolume * tier.rate;
+          remaining -= tierVolume;
+          prevLimit = tier.limit;
+        }
+        return raw;
       }
-    } else {
-      rawTariff = consumption * config.gasRate;
-    }
+      return c * config.gasRate;
+    };
 
-    rawTariff = r2(rawTariff);
+    const rawTariff = r2(rawAt(cum) - rawAt(prior));
     const otvCost = r2(consumption * 0.074077);
     const kdvCost = r2((rawTariff + otvCost) * 0.20);
-    const subCost = r2(config.taxes.abonelikUcreti * 1.20);
+    // Servis bedeli ayda 1 kez — ayın ilk okumasında
+    const subCost = prior > 0 ? 0 : r2(config.taxes.abonelikUcreti * 1.20);
     const totalCost = r2(rawTariff + otvCost + kdvCost + subCost);
     const energyKwh = r2(consumption * 10.64);
 
@@ -210,6 +226,8 @@ export const useUtilityStore = create<UtilityState>()(
       removeProperty: (id) =>
         set(s => ({
           properties:       s.properties.filter(p => p.id !== id),
+          // Mülke ait kayıtlar da silinir — orphan log kalmaz
+          logs:             s.logs.filter(l => l.propertyId !== id),
           activePropertyId: s.activePropertyId === id
             ? (s.properties.find(p => p.id !== id)?.id ?? null)
             : s.activePropertyId,

@@ -146,6 +146,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         return get().isActive() ? PLANS[tier] : PLANS['free'];
       },
 
+      /**
+       * Free / expired modunda freeUsage sayacını döner.
+       * Paid modunda toplam scanUsage'ı döner (UI gösterimi için).
+       */
       monthlyScanCount: (type) => {
         const key = currentMonthKey();
         const isPaid = get().effectivePlan().maxScansPerMonth === -1;
@@ -181,6 +185,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       },
 
       upgradeTo: (tier, cycle) => {
+        // Free'ye dönüş: süre damgası anlamsız — null bırak
+        if (tier === 'free') {
+          set({ tier, billingCycle: cycle, expiresAt: null });
+          return;
+        }
         const now = new Date();
         const expires = new Date(now);
         expires.setMonth(expires.getMonth() + (cycle === 'yearly' ? 12 : 1));
@@ -191,7 +200,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         const { tier, expiresAt } = get();
         if (tier === 'free') return true;
         if (!expiresAt) return false;
-        return new Date(expiresAt) > new Date();
+         return new Date(expiresAt) > new Date();
       },
     }),
     {

@@ -105,6 +105,31 @@ function normalizeWaterConsumption(m3: number, month: number): number {
   return m3 / idx;
 }
 
+/**
+ * Okuma aralıkları düzensiz olabilir (7 gün de, 3 ay da). Her log'un tüketimini
+ * kapsadığı gün sayısına bölüp 30 günlük eşdeğere çevirir — böylece kısa/uzun
+ * dönem okumaları adil karşılaştırılır.
+ *
+ * @param logs - Aynı türe ait loglar, yeni → eski sıralı
+ */
+export function toMonthlyEquivalents(
+  logs: ConsumptionLog[],
+): { m3: number; month: number; cost: number }[] {
+  return logs.map((l, i) => {
+    const older = logs[i + 1];
+    const days = older
+      ? Math.min(90, Math.max(1,
+          (new Date(l.date).getTime() - new Date(older.date).getTime()) / 86_400_000))
+      : 30; // en eski okumanın dönemi bilinmez → 30 gün varsay
+    const factor = 30 / days;
+    return {
+      m3:    l.consumption * factor,
+      month: new Date(l.date).getMonth() + 1,
+      cost:  l.cost * factor,
+    };
+  });
+}
+
 // ── Referans Eşikler ──────────────────────────────────────────────────────────
 
 /**
@@ -151,12 +176,13 @@ export function analyzeWaterLeakRisk(
     };
   }
 
-  // Normalize edilmiş tüketim geçmişi
-  const normalized = waterLogs.map(l => ({
-    norm:  normalizeWaterConsumption(l.consumption, new Date(l.date).getMonth() + 1),
-    raw:   l.consumption,
-    month: new Date(l.date).getMonth() + 1,
-    cost:  l.cost,
+  // Önce 30 günlük eşdeğere, sonra mevsime göre normalize et
+  const monthlyEq  = toMonthlyEquivalents(waterLogs);
+  const normalized = monthlyEq.map(e => ({
+    norm:  normalizeWaterConsumption(e.m3, e.month),
+    raw:   e.m3,          // 30 günlük eşdeğer m³
+    month: e.month,
+    cost:  e.cost,
   }));
 
   const recent       = normalized[0];
@@ -257,7 +283,7 @@ export function analyzeWaterLeakRisk(
     level: 'safe',
     score,
     title:       '✅ Normal Su Tüketimi',
-    description: `Tüketim mevsimsel beklentiyle uyumlu (${recent.raw} m³).`,
+    description: `Tüketim mevsimsel beklentiyle uyumlu (~${recent.raw.toFixed(1)} m³/ay eşdeğeri).`,
     actions:     [],
   };
 }
@@ -290,9 +316,9 @@ export function getWaterSavingAdvice(
     };
   }
 
-  // Son 3 ay ortalama
-  const avgM3 = waterLogs.slice(0, 3).reduce((s, l) => s + l.consumption, 0) /
-    Math.min(waterLogs.length, 3);
+  // Son 3 okumanın 30 günlük eşdeğer ortalaması
+  const eq    = toMonthlyEquivalents(waterLogs).slice(0, 3);
+  const avgM3 = eq.reduce((s, e) => s + e.m3, 0) / eq.length;
 
   const expectedPerPerson = THRESHOLDS.avgPerPerson * householdSize;
   const excessM3          = Math.max(0, avgM3 - expectedPerPerson);
@@ -356,11 +382,13 @@ export function auditWaterBill(
   expectedCost: number,
   actualBill?:  number,
 ): WaterBillingAudit {
-  if (actualBill === undefined || actualBill <= 0) {
+  if (actualBill === undefined || actualBill <= 0 || expectedCost <= 0) {
     return {
       expectedCost,
       verdict: 'unknown',
-      message: 'Fatura tutarını girin — Verim hesabıyla karşılaştıralım.',
+      message: expectedCost <= 0
+        ? 'Karşılaştırma için önce bu aya ait sayaç okuması gerekli.'
+        : 'Fatura tutarını girin — Verim hesabıyla karşılaştıralım.',
     };
   }
 

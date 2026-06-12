@@ -35,10 +35,10 @@ function PlanCard({
       <Text style={[s.planName, { color: meta.color }]}>{plan.name}</Text>
 
       <View style={s.priceRow}>
-        {price === 0 ? (
-          <Text style={s.priceText}>Ücretsiz</Text>
-        ) : tier === 'enterprise' ? (
+        {tier === 'enterprise' ? (
           <Text style={s.priceText}>Teklif Al</Text>
+        ) : price === 0 ? (
+          <Text style={s.priceText}>Ücretsiz</Text>
         ) : (
           <>
             <Text style={s.priceText}>₺{price.toFixed(2)}</Text>
@@ -83,6 +83,7 @@ export default function PaywallScreen() {
 
   const handleSelect = (selectedTier: SubscriptionTier) => {
     if (selectedTier === tier) return;
+    if (purchasing) return;   // çift dokunma → çift satın alma engeli
 
     if (selectedTier === 'enterprise') {
       Alert.alert('Kurumsal Plan', 'sales@verim.app adresine yazın veya web sitemizi ziyaret edin.', [{ text: 'Tamam' }]);

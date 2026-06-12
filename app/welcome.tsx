@@ -42,11 +42,13 @@ export default function WelcomeScreen() {
     Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
   }, []);
 
-  // Eğer setup zaten tamamlandıysa direkt ana sayfaya
-  if (profile.setupComplete) {
-    router.replace('/');
-    return null;
-  }
+  // Eğer setup zaten tamamlandıysa direkt ana sayfaya.
+  // Navigation render sırasında değil effect içinde yapılmalı.
+  React.useEffect(() => {
+    if (profile.setupComplete) router.replace('/');
+  }, [profile.setupComplete]);
+
+  if (profile.setupComplete) return null;
 
   return (
     <Animated.View style={[s.root, { opacity: fadeAnim }]}>
@@ -58,7 +60,7 @@ export default function WelcomeScreen() {
           <Text style={s.appName}>Verim</Text>
           <Text style={s.tagline}>Faturanı Kontrol Et. Kaçağı Anında Öğren.</Text>
           <Text style={s.sub}>
-            Türkiye'nin {'>'}19 şehrinde resmi belediye tarifesiyle hesaplama
+            Türkiye'nin 30 büyükşehrinde resmi belediye tarifesiyle hesaplama
           </Text>
         </View>
 
@@ -79,7 +81,7 @@ export default function WelcomeScreen() {
         <View style={s.trustBox}>
           <Text style={s.trustText}>
             🔒 Tüm veriler yalnızca cihazınızda saklanır (iOS/Android sandbox).{'\n'}
-            Sunucuya gönderilmez, reklam yok, abonelik zorunlu değil.
+            Sunucuya gönderilmez, abonelik zorunlu değil.
           </Text>
         </View>
 

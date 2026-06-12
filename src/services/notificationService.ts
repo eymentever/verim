@@ -97,7 +97,8 @@ export async function notifyValidationResult(
       sound:    'default',
       priority: Notifications.AndroidNotificationPriority.HIGH,
     },
-    trigger: null, // anında gönder
+    // Android'de leak_alert kanalını kullan; null trigger varsayılan kanala düşer
+    trigger: Platform.OS === 'android' ? { channelId: 'leak_alert' } : null,
   });
 }
 
@@ -127,7 +128,7 @@ export async function notifyLeakSuspicion(
       sound:    'default',
       priority: Notifications.AndroidNotificationPriority.MAX,
     },
-    trigger: null,
+    trigger: Platform.OS === 'android' ? { channelId: 'leak_alert' } : null,
   });
 }
 
@@ -143,6 +144,24 @@ export async function scheduleMonthlyReminder(dayOfMonth = 1): Promise<string> {
   // Önce mevcut hatırlatıcıyı iptal et
   await cancelMonthlyReminder();
 
+  // CALENDAR trigger yalnızca iOS'ta çalışır; MONTHLY her iki platformda desteklenir
+  const trigger: Notifications.NotificationTriggerInput =
+    Platform.OS === 'ios'
+      ? {
+          type:    Notifications.SchedulableTriggerInputTypes.CALENDAR,
+          day:     dayOfMonth,
+          hour:    9,
+          minute:  0,
+          repeats: true,
+        }
+      : {
+          type:      Notifications.SchedulableTriggerInputTypes.MONTHLY,
+          day:       dayOfMonth,
+          hour:      9,
+          minute:    0,
+          channelId: 'general',
+        };
+
   const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: '📊 Aylık Sayaç Okuması Zamanı',
@@ -150,19 +169,11 @@ export async function scheduleMonthlyReminder(dayOfMonth = 1): Promise<string> {
       data:  { type: 'MONTHLY_REMINDER' },
       sound: 'default',
     },
-    trigger: {
-      type:       Notifications.SchedulableTriggerInputTypes.CALENDAR,
-      day:        dayOfMonth,
-      hour:       9,
-      minute:     0,
-      repeats:    true,
-    },
+    trigger,
   });
 
   return id;
 }
-
-const MONTHLY_REMINDER_TAG = 'verim_monthly_reminder';
 
 export async function cancelMonthlyReminder(): Promise<void> {
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();

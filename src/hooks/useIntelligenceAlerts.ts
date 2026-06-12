@@ -57,7 +57,6 @@ export function useIntelligenceAlerts({ logs, city }: Options) {
 
       const config    = getCityConfig(city);
       const waterRate = config.waterTiers[0]?.rate ?? 44.50;
-      const gasRate   = config.gasRate ?? 13.45;
 
       // ── Su analizi ──────────────────────────────────────────────────────────
       const waterLogs = logs.filter(l => l.type === 'water');

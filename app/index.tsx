@@ -128,7 +128,9 @@ export default function Dashboard() {
 
     const dom  = now.getDate();
     const dim  = new Date(cy, cm + 1, 0).getDate();
-    const proj = dom > 0 ? (total / dom) * dim : 0;
+    // Ayın ilk günlerinde tek okuma (önceki dönemi kapsar) projeksiyonu aşırı şişirir;
+    // 7 günden az veride ekstrapolasyon yapma, mevcut toplamı göster.
+    const proj = dom >= 7 ? (total / dom) * dim : total;
 
     return { waterCost, gasCost, total, waterM3, gasM3, proj, count: month.length };
   }, [activeLogs]);

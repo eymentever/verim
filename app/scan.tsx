@@ -152,7 +152,7 @@ export default function ScanScreen() {
   const running   = useRef(false);
 
   const color = meterType === 'water' ? C.water : C.gas;
-  const plan  = subStore.currentPlan();
+  const plan  = subStore.effectivePlan();   // expiry kontrolü dahil — canScan ile tutarlı
 
   // ── İzin ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -246,9 +246,19 @@ export default function ScanScreen() {
 
     const isFirst        = lastIndex === undefined;
     const netConsumption = isFirst ? 0 : (computeConsumption(rawIndex, lastIndex!) ?? 0);
+    // Bu ay aynı tür için önceden faturalandırılmış m³ — kademe devri + abonelik tek sefer
+    const now = new Date();
+    const priorMonthM3 = store.logs
+      .filter(l =>
+        l.propertyId === propId &&
+        l.type === meterType &&
+        l.consumption > 0 &&
+        new Date(l.date).getMonth() === now.getMonth() &&
+        new Date(l.date).getFullYear() === now.getFullYear())
+      .reduce((s, l) => s + l.consumption, 0);
     const bd: BillBreakdown = isFirst
       ? { consumption: 0, rawTariff: 0, kdv: 0, totalCost: 0, subCost: 0 }
-      : getBillBreakdown(meterType, netConsumption, city, district);
+      : getBillBreakdown(meterType, netConsumption, city, district, priorMonthM3);
 
     setConsumption(netConsumption);
     setIsBaseline(isFirst);
@@ -730,5 +740,5 @@ const s = StyleSheet.create({
   photoLabel:    { fontSize: FONT.sm, fontWeight: '800', textAlign: 'center' },
   photoPreview:  { width: '100%', height: 200, borderRadius: RADIUS.lg, backgroundColor: C.card, borderWidth: 1, borderColor: C.border },
   photoCard:     { backgroundColor: C.card, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1 },
-  photoHint:     { color: C.textDim, fontSize: FONT.sm, lineHeight: 18 },
+  photoHint:     { color: C.textDim, fontSize: FONT.xs, lineHeight: 17, textAlign: 'center' },
 });

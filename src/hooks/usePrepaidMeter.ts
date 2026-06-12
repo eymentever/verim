@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ConsumptionLog } from '../store/useUtilityStore';
+import { ConsumptionLog, UtilityType } from '../store/useUtilityStore';
 
 export interface PrepaidStatus {
   isPrepaid: boolean;
@@ -14,11 +14,17 @@ export interface PrepaidStatus {
 /**
  * Kartlı (prepaid) sayaç mantığı.
  * `isPrepaid` ve `loadedCredit` kullanıcı profilinden gelir.
+ *
+ * @param type     - Kartlı sayacın türü (yalnızca bu türün maliyeti krediden düşülür)
+ * @param loadedAt - Kredinin yüklendiği tarih (ISO). Verilirse yalnızca bu tarihten
+ *                   sonraki tüketim düşülür — kredi güncellenince sayaç sıfırlanır.
  */
 export function usePrepaidMeter(
   isPrepaid: boolean,
   loadedCredit: number,
-  logs: ConsumptionLog[]
+  logs: ConsumptionLog[],
+  type: UtilityType = 'gas',
+  loadedAt?: string,
 ): PrepaidStatus {
   return useMemo(() => {
     if (!isPrepaid) {
@@ -33,7 +39,10 @@ export function usePrepaidMeter(
       };
     }
 
-    const usedCredit = logs.reduce((s, l) => s + l.cost, 0);
+    const loadedTs = loadedAt ? new Date(loadedAt).getTime() : 0;
+    const usedCredit = logs
+      .filter(l => l.type === type && new Date(l.date).getTime() >= loadedTs)
+      .reduce((s, l) => s + l.cost, 0);
     const remainingCredit = Math.max(0, loadedCredit - usedCredit);
     const ratio = loadedCredit > 0 ? remainingCredit / loadedCredit : 0;
     const isLow = ratio < 0.20;

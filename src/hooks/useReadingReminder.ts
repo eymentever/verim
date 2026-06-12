@@ -133,13 +133,13 @@ export function useReadingReminder(
       urgency = 'due';
       title   = `⚠️ ${label} Takip Okuması Önerilir`;
       message = `Son okumada anormal tüketim tespit edildi. ${ANOMALY_CYCLE} günde bir kontrol et.`;
-    } else if (daysSinceLast >= NORMAL_CYCLE + 7) {
-      // 37+ gün: gecikmiş
+    } else if (daysSinceLast >= cycle + 12) {
+      // döngü + 12 gün: gecikmiş (sezonsal döngüde de tutarlı)
       urgency = 'overdue';
       title   = `🚨 ${label} Okuması Gecikti`;
       message = `Son okumadan ${daysSinceLast} gün geçti. Belediye faturası göndermiş olabilir, kontrol et.`;
-    } else if (daysSinceLast >= NORMAL_CYCLE - BUFFER_DAYS) {
-      // 25-37 gün: tam zamanı
+    } else if (daysSinceLast >= cycle) {
+      // önerilen döngü doldu: tam zamanı
       urgency = 'due';
       title   = `⏰ ${label} Okuma Zamanı`;
       message = seasonalMessage(type, season, daysSinceLast);

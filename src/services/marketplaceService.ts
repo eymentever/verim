@@ -155,12 +155,15 @@ export function getRecommendations(logs: ConsumptionLog[]): Recommendation[] {
 
     if (ratio >= product.triggerRatio) {
       const urgency: Recommendation['urgency'] = ratio >= 1.5 ? 'high' : ratio >= 1.2 ? 'medium' : 'low';
+      const pct = Math.round((ratio - 1) * 100);
+      const typeLabel = product.triggerType === 'water' ? 'Su' : 'Doğalgaz';
       recommendations.push({
         product,
         urgency,
-        reason: product.triggerType === 'water'
-          ? `Su tüketiminiz %${Math.round((waterRatio - 1) * 100)} artmış.`
-          : `Doğalgaz tüketiminiz %${Math.round((gasRatio - 1) * 100)} artmış.`,
+        // Artış yoksa "%0 artmış" gibi anlamsız gerekçe üretme
+        reason: pct > 0
+          ? `${typeLabel} tüketiminiz %${pct} artmış.`
+          : `${typeLabel} tüketim profilinize uygun tasarruf önerisi.`,
         estimatedCommission: product.price * product.commissionRate,
       });
     }

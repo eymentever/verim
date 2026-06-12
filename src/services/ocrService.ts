@@ -31,16 +31,9 @@ const GAS_SPIKE_PER_DAY   = 50;  // m³/gün anomali eşiği
 
 // ── Regex filtreleri ──────────────────────────────────────────────────────────
 
-/**
- * Su — siyah tekerlekler: ondalık ayırıcı öncesi 5–7 rakam.
- * Kırmızı/ondalık bölüm kasıtlı olarak kesilir.
- */
-const WATER_REGEX = /^(\d{5,8})$/;  // 8 hane: 00043817 gibi sıfır padded sayaçlar
-
-/**
- * Gaz — ana gösterge: ondalık ayırıcı öncesi 5–8 rakam.
- */
-const GAS_REGEX = /^(\d{5,8})$/;
+// 1–8 hane: 1 m³ den 99,999,999 m³ ye kadar tüm gerçekçi okumalar
+const WATER_REGEX = /^0*(\d{1,8})$/;
+const GAS_REGEX   = /^0*(\d{1,8})$/;
 
 // ── Parser fonksiyonları ──────────────────────────────────────────────────────
 

@@ -120,7 +120,13 @@ export default function SettingsScreen() {
 
   // Prepaid hook — bilgilendirme için
   const activeLogs   = store.activePropertyLogs();
-  const prepaidStatus = usePrepaidMeter(isPrepaid, parseFloat(creditStr) || 0, activeLogs);
+  const prepaidStatus = usePrepaidMeter(
+    isPrepaid,
+    parseFloat(creditStr) || 0,
+    activeLogs,
+    prop?.prepaidType ?? 'gas',
+    prop?.prepaidLoadedAt,
+  );
 
   const handleSaveName = () => {
     store.setProfile({ name: name.trim() });
@@ -329,7 +335,13 @@ export default function SettingsScreen() {
                 onChangeText={setCreditStr}
                 onBlur={() => {
                   const credit = parseFloat(creditStr) || 0;
-                  if (prop) store.updateProperty(prop.id, { prepaidCredit: credit });
+                  // Kredi değiştiyse yükleme tarihini güncelle — tüketim sayacı sıfırlanır
+                  if (prop && credit !== (prop.prepaidCredit ?? 0)) {
+                    store.updateProperty(prop.id, {
+                      prepaidCredit:   credit,
+                      prepaidLoadedAt: new Date().toISOString(),
+                    });
+                  }
                 }}
                 keyboardType="numeric"
                 placeholderTextColor={C.textMuted}
@@ -530,9 +542,9 @@ export default function SettingsScreen() {
 
                 <Text style={s.auditFooter}>
                   Kaynak: {
-                    city === 'İstanbul' ? 'İSKİ & İGDAŞ' :
-                    city === 'Ankara'   ? 'ASKİ & BAŞKENTGAZ' :
-                    city === 'İzmir'    ? 'İZSU & İZMİRGAZ' : 'SASKİ & AGDAŞ'
+                    ({ İstanbul: 'İSKİ & İGDAŞ', Ankara: 'ASKİ & BAŞKENTGAZ',
+                       İzmir: 'İZSU & İZMİRGAZ', Sakarya: 'SASKİ & AGDAŞ' } as Record<string, string>)[city]
+                    ?? `${city} su ve gaz idaresi`
                   } {config.lastUpdated} resmi tarifesi
                 </Text>
               </>

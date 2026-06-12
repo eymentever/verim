@@ -8,6 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { ConsumptionLog } from '../store/useUtilityStore';
+import { toMonthlyEquivalents } from './waterIntelligenceService';
 
 // ── Tipler ────────────────────────────────────────────────────────────────────
 
@@ -135,12 +136,13 @@ export function analyzeGasLeakRisk(logs: ConsumptionLog[], city = 'İstanbul'): 
     };
   }
 
-  // Normalize edilmiş tüketim geçmişi
-  const normalized = gasLogs.map(l => ({
-    norm:  normalizeGasConsumption(l.consumption, new Date(l.date).getMonth() + 1),
-    month: new Date(l.date).getMonth() + 1,
-    raw:   l.consumption,
-    cost:  l.cost,
+  // Önce 30 günlük eşdeğere, sonra mevsime göre normalize et
+  const monthlyEq  = toMonthlyEquivalents(gasLogs);
+  const normalized = monthlyEq.map(e => ({
+    norm:  normalizeGasConsumption(e.m3, e.month),
+    month: e.month,
+    raw:   e.m3,          // 30 günlük eşdeğer m³
+    cost:  e.cost,
   }));
 
   const recent    = normalized[0];
@@ -194,7 +196,7 @@ export function analyzeGasLeakRisk(logs: ConsumptionLog[], city = 'İstanbul'): 
       level, score,
       title:       '🚨 Gaz Kaçağı Şüphesi',
       description: summerAnomaly
-        ? `Yaz ayında beklenmedik yüksek gaz tüketimi (${recent.raw} m³). Bu dönemde ısıtma kullanılmamalı.`
+        ? `Yaz ayında beklenmedik yüksek gaz tüketimi (~${recent.raw.toFixed(0)} m³/ay eşdeğeri). Bu dönemde ısıtma kullanılmamalı.`
         : `Normalize tüketim geçmiş ortalamanın ${ratio.toFixed(1)}x'i. Ciddi sızıntı olabilir.`,
       actions: [
         'Tüm gaz vanalarını kapatın, sayacın döndüğünü gözlemleyin.',
@@ -244,7 +246,7 @@ export function analyzeGasLeakRisk(logs: ConsumptionLog[], city = 'İstanbul'): 
     level: 'safe',
     score,
     title:       '✅ Normal Gaz Tüketimi',
-    description: `Tüketim mevsimsel beklentiyle uyumlu (${recent.raw} m³).`,
+    description: `Tüketim mevsimsel beklentiyle uyumlu (~${recent.raw.toFixed(0)} m³/ay eşdeğeri).`,
     actions:     [],
   };
 }
@@ -288,9 +290,9 @@ export function getHeatingOptimization(
     };
   }
 
-  const avgMonthlyM3 = gasLogs
-    .slice(0, 3)
-    .reduce((s, l) => s + l.consumption, 0) / Math.min(gasLogs.length, 3);
+  // Son 3 okumanın 30 günlük eşdeğer ortalaması
+  const eq = toMonthlyEquivalents(gasLogs).slice(0, 3);
+  const avgMonthlyM3 = eq.reduce((s, e) => s + e.m3, 0) / eq.length;
 
   // Her 1°C termostat düşüşü ~%6 tasarruf sağlar (Enerji Bakanlığı verisi)
   const savingPer1Degree = avgMonthlyM3 * 0.06 * gasRate;
@@ -341,11 +343,13 @@ export function auditBill(
   expectedCost: number,
   actualBill?:  number,
 ): BillingAudit {
-  if (actualBill === undefined || actualBill <= 0) {
+  if (actualBill === undefined || actualBill <= 0 || expectedCost <= 0) {
     return {
       expectedCost,
       verdict: 'unknown',
-      message: 'Belediye fatura tutarını girin — Verim\'in hesabıyla karşılaştıralım.',
+      message: expectedCost <= 0
+        ? 'Karşılaştırma için önce bu aya ait sayaç okuması gerekli.'
+        : 'Belediye fatura tutarını girin — Verim\'in hesabıyla karşılaştıralım.',
     };
   }
 

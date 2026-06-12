@@ -36,4 +36,22 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Sayacınızı kamerayla oku
+          "cameraPermission": "Sayacınızı kamerayla okuyabilmek için kamera izni gereklidir.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#00FF9D",
+          "sounds": []
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -26,7 +26,7 @@ export interface CityTariffConfig {
 
 export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
   İstanbul: {
-    city: 'İstanbul',
+    city: 'İstanbul', verified: true,
     districts: [
       'Adalar', 'Arnavutköy', 'Ataşehir', 'Avcılar', 'Bağcılar', 'Bahçelievler',
       'Bakırköy', 'Başakşehir', 'Bayrampaşa', 'Beşiktaş', 'Beykoz', 'Beylikdüzü',
@@ -53,7 +53,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
   },
 
   Ankara: {
-    city: 'Ankara',
+    city: 'Ankara', verified: true,
     districts: [
       'Akyurt', 'Altındağ', 'Ayaş', 'Bala', 'Beypazarı', 'Çamlıdere', 'Çankaya',
       'Çubuk', 'Elmadağ', 'Etimesgut', 'Evren', 'Gölbaşı', 'Güdül', 'Haymana',
@@ -76,7 +76,7 @@ export const CITY_TARIFFS: Record<string, CityTariffConfig> = {
   },
 
   İzmir: {
-    city: 'İzmir',
+    city: 'İzmir', verified: true,
     districts: [
       'Aliağa', 'Balçova', 'Bayındır', 'Bayraklı', 'Bergama', 'Beydağ', 'Bornova',
       'Buca', 'Çeşme', 'Çiğli', 'Dikili', 'Foça', 'Gaziemir', 'Güzelbahçe',
@@ -526,7 +526,6 @@ export function calculateWaterCost(
 
   // İlçe bazlı resmi katsayı çarpanı
   const discountFactor = district ? getDistrictWaterMultiplier(city, district) : 1.0;
-  remaining = consumption;
 
   // Toplam tüketim üzerinden kademeli tarife uygula
   for (const tier of config.waterTiers) {
@@ -538,9 +537,9 @@ export function calculateWaterCost(
   }
 
   // İnsani su hakkı: kademe-1 birim fiyatından kredi düş (İSKİ yöntemi)
-  const humanFreeM3 = config.humanWaterRightM3 ?? 0;
-  if (humanFreeM3 > 0) {
-    const effectiveFree = Math.min(humanFreeM3, consumption);
+  const freeM3 = config.humanWaterRightM3 ?? 0;
+  if (freeM3 > 0) {
+    const effectiveFree = Math.min(freeM3, consumption);
     const tier1Rate     = config.waterTiers[0]?.rate ?? 0;
     rawTariff = Math.max(0, rawTariff - effectiveFree * tier1Rate * discountFactor);
   }
